@@ -34,7 +34,7 @@ class MenuItemRepository:
         with self.DATA_PATH.open("r", encoding="utf-8") as f:
             return json.load(f)
 
-    def save_all(self, menu_items: List[Dict[str, Any]]) -> None:
+    def save_all_items(self, menu_items: List[Dict[str, Any]]) -> None:
         """  write back all of updated menu item back to menu item  
         branch: feature/menu-item-schema
         
