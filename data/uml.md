@@ -1,161 +1,283 @@
-# COSC 310 Team 19 — M0 UML Architecture
+## UML diagrams
 
-Repository inspected: `kunoa2580/cosc310-team19-food-delivery`, branch `main`, tree commit `22e8abe8b353e187810e49d2fa3a15638bb94e79`.
+### Restaurant Backend
+
+```mermaid
+
+classDiagram
+    direction TB
+    class Application {
+        <<module>>
+        +app: FastAPI
+        +root()
+        +health()
+    }
+    class RestaurantRoutes {
+        <<module>>
+        +router: APIRouter
+        +restaurant_route_get_list(): list~RestaurantRead~
+        +restaurant_route_create(new_restaurant: RestaurantCreate): RestaurantRead
+        +restaurant_route_get_by_cuisine(cuisine: str or None = None): list~RestaurantRead~
+        +restaurant_route_get_by_id(restaurant_id: int): RestaurantRead
+        +restaurant_route_delete(restaurant_id: int): None
+        +restaurant_route_search(input: str): RestaurantRead or None P
+        +restaurant_route_update(restaurant_id: int, payload: RestaurantUpdate): RestaurantRead P
+    }
+    note for RestaurantRoutes "TODO: restaurant_route_update() must return HTTP 404 when the restaurant is not found"
+    class RestaurantService {
+        <<module>>
+        +restaurant_repo: RestaurantRepository
+        +restaurant_service_create(new_restaurant: RestaurantCreate): RestaurantRead
+        +restaurant_service_list(): list~RestaurantRead~
+        +restaurant_service_get_by_id(restaurant_id: int): RestaurantRead
+        +restaurant_service_get_by_cuisine(cuisine: str): list~RestaurantRead~
+        +restaurant_service_delete(restaurant_id: int): None
+        +restaurant_service_search(input: str): RestaurantRead or None P
+        +restaurant_service_update(restaurant_id: int, paylaod: RestaurantUpdate): RestaurantRead P
+    }
+    class RestaurantRepository {
+        <<class>>
+        +data_path: str or None
+        +__init__(data_path: str or None = None)
+        -_get_data_path(): Path
+        -_load(): list~dict~
+        -_save(restaurants: list~dict~): None
+        +restaurant_repo_list(): list~dict~
+        +restaurant_repo_get_by_id(restaurant_id: int): dict or None
+        +restaurant_repo_create(restaurant_data: dict): dict
+        +restaurant_repo_delete_by_id(restaurant_id: int): bool
+        +restaurant_repo_search(input: str): dict or None P
+        +restaurant_repo_update(restaurant_id: int, changes: dict): dict or None P
+    }
+    Application ..> RestaurantRoutes : includes router
+    RestaurantRoutes ..> RestaurantService : calls
+    RestaurantService ..> RestaurantRepository : uses restaurant_repo instance
+
+```
+
+### Menu Backend[TODO]
+
+```mermaid
+classDiagram
+    direction TB
+    class MenuRoutes {
+        <<module>>
+        +router: APIRouter P
+        +menu_route_list_items(restaurant_id: int): list~MenuItemRead~ P
+        +menu_route_get_by_id(restaurant_id: int, item_id: int): MenuItemRead P
+        +menu_route_add_item(restaurant_id: int, payload: MenuItemCreate): MenuItemRead P
+        +menu_route_update_item(restaurant_id: int, item_id: int, payload: MenuItemUpdate): MenuItemRead P
+    }
+    class MenuServices {
+        <<module>>
+        +menu_repo: MenuRepository P
+        +menu_service_list(restaurant_id: int): list~MenuItemRead~ P
+        +menu_service_get_by_id(restaurant_id: int, item_id: int): MenuItemRead P
+        +menu_service_add(restaurant_id: int, payload: MenuItemCreate): MenuItemRead P
+        +menu_service_update(restaurant_id: int, item_id: int, payload: MenuItemUpdate): MenuItemRead P
+    }
+    class MenuRepository {
+        <<class>>
+        +data_path: str or None P
+        +__init__(data_path: str or None = None) P
+        -_get_data_path(): Path P
+        -_load(): list~dict~ P
+        -_save(records: list~dict~): None P
+        +menu_repo_list(restaurant_id: int): list~dict~ P
+        +menu_repo_get_by_id(restaurant_id: int, item_id: int): dict or None P
+        +menu_repo_create(record: dict): dict P
+        +menu_repo_udpate(restaurant_id: int, item_id: int, changes: dict): dict or None P
+    }
+    MenuRoutes ..> MenuServices : calls
+    MenuServices ..> MenuRepository : calls
+
+```
 
 
-## 1. Proposed unified M0 architecture
+### Current models and domain errors
 
-The naming rule is **resource → layer → action**:
+```mermaid
 
-- Route functions use `restaurant_route_*`.
-- Service functions use `restaurant_service_*`.
-- Repository functions use `restaurant_repo_*`.
-- Generic JSON functions use `json_store_*`.
-- The final action vocabulary is consistent: `list`, `get_by_id`, `get_by_name`, `create`, `update`, `deactivate`, and `delete`.
+classDiagram
+    direction TB
+    class BaseModel {
+        <<external>>
+    }
+    class RestaurantRead {
+        <<class>>
+        +id: int
+        +name: str
+        +address: str
+        +phone_number: str
+        +email: str
+        +website: str
+        +cuisine_type: str
+        +opening_hours: str
+        +rating: float
+        +availability: bool
+    }
+    class RestaurantCreate {
+        <<class>>
+        +name: str
+        +address: str
+        +phone_number: str
+        +email: str
+        +website: str
+        +cuisine_type: str
+        +opening_hours: str
+        +rating: float
+        +availability: bool = True
+    }
+    class RestaurantUpdate {
+        <<class>>
+        +name: str or None = None
+        +address: str or None = None
+        +phone_number: str or None = None
+        +email: str or None = None
+        +website: str or None = None
+        +cuisine_type: str or None = None
+        +opening_hours: str or None = None
+        +rating: float or None = None
+        +availability: bool or None = None
+    }
+    class Exception {
+        <<external>>
+    }
+    class DuplicateRestaurantError {
+        <<class>>
+    }
+    class RestaurantNotFoundError {
+        <<class>>
+    }
+    BaseModel <|-- RestaurantRead
+    BaseModel <|-- RestaurantCreate
+    BaseModel <|-- RestaurantUpdate
+    Exception <|-- DuplicateRestaurantError
+    Exception <|-- RestaurantNotFoundError
+
+```
+
+### Menu models and domain errors [TODO]
 
 ```mermaid
 classDiagram
     direction TB
 
-    class Application {
-        <<main.py>>
-        +app: FastAPI
-        +root_route_get() dict 
-        +health_route_get() dict 
-        +app_handle_restaurant_not_found(request, error) JSONResponse 
-        +app_handle_duplicate_restaurant(request, error) JSONResponse 
-        +app_handle_data_store_error(request, error) JSONResponse 
+    class BaseModel {
+        <<external>>
     }
 
-    class RestaurantRoutes {
-        <<restaurant_route.py>>
-        +router: APIRouter
-        +restaurant_route_list(cuisine: str or None) list~RestaurantRead~ 
-        +restaurant_route_get_by_id(restaurant_id: int) RestaurantRead 
-        +restaurant_route_create(payload: RestaurantCreate) RestaurantRead 
-        +restaurant_route_delete(restaurant_id: int) Response
-    }
-
-    class RestaurantService {
-        <<restaurant_service.py>>
-        +restaurant_service_list(cuisine: str or None) list~RestaurantRead~ 
-        +restaurant_service_get_by_id(restaurant_id: int) RestaurantRead 
-        +restaurant_service_create(payload: RestaurantCreate) 
-        +restaurant_service_get_by_cuisine(cuisine:str) list~RestaurantRead~
-        +restaurant_service_delete_by_id(restaurant_id: int) response
-    }
-
-    class RestaurantRepository {
-        <<restaurant_repo.py>
-        +DEFAULT_DATA_DIR: Path
-        +json_store_get_data_path(file_name: str) Path 
-        +json_store_load(file_name: str) list~dict~ 
-        +RESTAURANTS_FILE: str
-        +restaurant_repo_list() list~dict~ 
-        +restaurant_repo_get_by_id(restaurant_id: int) 
-        +restaurant_repo_get_by_name(name: str) 
-        +restaurant_repo_create(data: dict) dict 
-        -restaurant_repo_next_id(restaurants: list~dict~) int
-        +restaurant_repo_delete_by_id(restaurant_id:int)
-    }
-
-
-    class RestaurantBase {
-        +model_config : ConfigDict()
-        +name: str
-        +address: str
-        +phone_number: str
-        +email: EmailStr
-        +website: HttpUrl
-        +cuisine_type: str
-        +opening_hours: str
-        +rating: float
-    }
-
-    class RestaurantCreate {
-        +model_config : ConfigDict()
-    }
-
-    class RestaurantUpdate {
-        +model_config : ConfigDict()
-        +name: str or None
-        +address: str or None
-        +phone_number: str or None
-        +email: EmailStr or None
-        +website: HttpUrl or None
-        +cuisine_type: str or None
-        +opening_hours: str or None
-        +rating: float or None
-    }
-
-    class RestaurantRead {
-        +model_config : ConfigDict()
+    class MenuItemRead {
+        <<class>>
         +id: int
+        +restaurant_id: int
+        +name: str
+        +description: str
+        +price: float
+        +availability: bool
+    }
+
+    class MenuItemCreate {
+        <<class>>
+        +name: str
+        +description: str
+        +price: float
+        +availability: bool = True
+    }
+
+    class MenuItemUpdate {
+        <<class>>
+        +name: str or None = None
+        +description: str or None = None
+        +price: float or None = None
+        +availability: bool or None = None
+    }
+
+    class Exception {
+        <<external>>
+    }
+
+    class DuplicateMenuItemError {
+        <<class>>
+    }
+
+    class MenuItemNotFoundError {
+        <<class>>
     }
 
     class RestaurantNotFoundError {
-        +restaurant_id: int
+        <<class>>
     }
 
-    class DuplicateRestaurantError {
-        +restaurant_name: str
-    }
+    BaseModel <|-- MenuItemRead
+    BaseModel <|-- MenuItemCreate
+    BaseModel <|-- MenuItemUpdate
 
-    class DataStoreError {
-        +file_name: str
-    }
+    Exception <|-- DuplicateMenuItemError
+    Exception <|-- MenuItemNotFoundError
+    Exception <|-- RestaurantNotFoundError
 
-    class RestaurantsJson {
-        +records: list~dict~
-    }
+    note for MenuItemRead "TODO: implement menu models; price must be nonnegative"
+    note for DuplicateMenuItemError "TODO: define duplicate rule; route returns HTTP 409"
+    note for MenuItemNotFoundError "TODO: item not found under the specified restaurant; route returns HTTP 404"
+    note for RestaurantNotFoundError "Reuse existing error when the parent restaurant does not exist; route returns HTTP 404"
+```
 
-    class Pytest {
-        +isolated_data(tmp_path,monkeypatch) 
-        +client() TestClient 
-    }
+`RestaurantNotFoundError` already exists and will be reused.
 
+`restaurant_id` comes from the route URL during creation and updating.
+`MenuItemRead` includes both the generated item ID and its restaurant ID.
+
+### Current test modules and fixtures
+
+```mermaid
+
+classDiagram
+    direction TB
+    class PytestFixtures {
+        <<module>>
+        +PROJECT_ROOT: Path
+        +REAL_DATA: Path
+        +isolated_data(tmp_path, monkeypatch)
+        +client()
+    }
+    class ApplicationTests {
+        <<module>>
+        +client: TestClient
+        +test_read_main()
+        +test_health()
+    }
     class RestaurantRouteTests {
-        +test_health_route_get() 
-        +test_restaurant_route_list() 
-        +test_restaurant_route_filter_by_cuisine() 
-        +test_restaurant_route_create_returns_201() 
-        +test_restaurant_route_create_duplicate_returns_409()  
+        <<module>>
+        +test_get_restaurants_list(client)
+        +test_get_restaurants_by_id(client)
+        +test_get_by_cuisine(client)
+        +test_add_new_restaurants_created(client)
+        +test_add_new_restaurants_conflict(client)
+        +test_delete_restaurant_not_found(client)
     }
-
     class RestaurantServiceTests {
-        +test_restaurant_service_create_rejects_duplicate_name() 
-        +test_restaurant_service_get_by_id_raises_when_missing()
-        +test_restaurant_service_list_filters_by_cuisine() 
+        <<module>>
+        +sample_data: list~dict~
+        +test_restaurant_service_create_good(client)
+        +test_restaurant_service_create_conflict(client)
+        +test_restaurant_service_list(client)
+        +test_restaurant_service_get_by_id_good(client)
+        +test_restaurant_service_get_by_id_not_found(client)
+        +test_restaurant_service_get_by_cuisine_good(client)
+        +test_restaurant_service_get_by_cuisine_not_found(client)
+        +test_restaurant_service_delete_good(client)
+        +test_restaurant_service_delete_not_found(client)
     }
-
-    class RestaurantRepositoryTests {
-        +test_restaurant_repo_create_assigns_stable_id() 
-        +test_restaurant_repo_create_persists_record() 
-        +test_restaurant_repo_get_by_id_returns_none_when_missing()
+    class Application {
+        <<module>>
     }
+    class RestaurantService {
+        <<module>>
+    }
+    RestaurantRouteTests ..> PytestFixtures : uses client and autouse fixture
+    RestaurantRouteTests ..> Application : TestClient requests
+    ApplicationTests ..> Application : TestClient requests
+    RestaurantServiceTests ..> RestaurantService : calls service functions
 
-    RestaurantBase <|-- RestaurantCreate
-    RestaurantBase <|-- RestaurantRead
-
-    pplication --> RestaurantRoutes : includes router
-    Application ..> RestaurantNotFoundError : maps to HTTP 404
-    Application ..> DuplicateRestaurantError : maps to HTTP 409
-    Application ..> DataStoreError : maps to HTTP 500
-
-    RestaurantRoutes --> RestaurantService : calls business API
-    RestaurantRoutes ..> RestaurantCreate : request body
-    RestaurantRoutes ..> RestaurantRead : response model
-
-    RestaurantService --> RestaurantRepository : calls persistence API
-    RestaurantService ..> RestaurantNotFoundError : raises
-    RestaurantService ..> DuplicateRestaurantError : raises
-    RestaurantService ..> RestaurantCreate : accepts
-    RestaurantService ..> RestaurantRead : returns
-
-    RestaurantRepository ..> DataStoreError : may propagate
-
-    Pytest --> RestaurantRepository : redirects data directory
-    RestaurantRouteTests --> Application : TestClient requests
-    RestaurantServiceTests --> RestaurantService : unit tests
-    RestaurantRepositoryTests --> RestaurantRepository : persistence tests
 ```
