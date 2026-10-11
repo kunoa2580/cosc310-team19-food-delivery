@@ -32,6 +32,7 @@
     "website": "https://saffronstreet.ca",
     "cuisine_type": "Indian",
     "opening_hours": "Daily: 12:00 PM - 11:00 PM",
-    "rating": 4.8
+    "rating": 4.8,
+    "availability": true
   }
 ]
