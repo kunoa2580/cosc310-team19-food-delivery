@@ -1,47 +1,60 @@
 from app.repositories.restaurant_repository import (
-    restaurant_repo_read_json,
-    restaurant_repo_add_restaurant_to_json
+    RestaurantRepository
+
 )
-from app.schemas.restaurant import Restaurant, RestaurantCreate
+from app.schemas.restaurant import RestaurantCreate, RestaurantUpdate, RestaurantRead
 from app.errors import DuplicateRestaurantError, RestaurantNotFoundError
 
-def restaurant_service_add(new_restaurant: RestaurantCreate) -> Restaurant:
-    restaurants = restaurant_repo_read_json()
+restaurant_repo = RestaurantRepository()
+
+def restaurant_service_create(new_restaurant: RestaurantCreate) -> RestaurantRead:
+
+    restaurants = restaurant_repo.restaurant_repo_list()
     for restaurant in restaurants:
         if restaurant["name"] == new_restaurant.name:
             raise DuplicateRestaurantError(
-                "A restaurant with this name already exists"
+                f"A restaurant with the name {new_restaurant.name} already exists"
             )
 
-    next_id: int = max((r["id"] for r in restaurants), default = 0) + 1
-
-    restaurant = {
-        "id": next_id,
-        **new_restaurant.model_dump()
-    }
-    return restaurant_repo_add_restaurant_to_json(restaurant)
-
-
-def restaurant_service_get_all_restaurants() -> list[Restaurant]:
-    restaurants = restaurant_repo_read_json()
-    return [Restaurant(**restaurant) for restaurant in restaurants]
-
-def restaurant_service_get_by_id(restaurant_id: int) -> Restaurant:
-    restaurants: list[dict] = restaurant_repo_read_json()
-
-    for restaurant in restaurants:
-        if restaurant["id"] == restaurant_id:
-            return Restaurant(**restaurant)
-
-    raise RestaurantNotFoundError(
-        f"Restaurant with id {restaurant_id} was not found."
+    restaurant = restaurant_repo.restaurant_repo_create(
+        new_restaurant.model_dump()
     )
 
-def restaurant_service_get_by_cuisine(cuisine: str) -> list[Restaurant]:
-    restaurants = restaurant_repo_read_json()
+    return RestaurantRead(**restaurant)
 
-    return [
-        Restaurant(**restaurant)
+
+def restaurant_service_list() -> list[RestaurantRead]:
+    restaurants = restaurant_repo.restaurant_repo_list()
+    return [RestaurantRead(**restaurant) for restaurant in restaurants]
+
+def restaurant_service_get_by_id(restaurant_id: int) -> RestaurantRead:
+    restaurant = restaurant_repo.restaurant_repo_get_by_id(
+        restaurant_id
+    )
+    if restaurant is None:
+        raise RestaurantNotFoundError(
+            f"Restaurant with id {restaurant_id} was not found."
+        )
+
+    return RestaurantRead(**restaurant)
+
+def restaurant_service_get_by_cuisine(cuisine: str) -> list[RestaurantRead]:
+    restaurants = restaurant_repo.restaurant_repo_list()
+    matched = [
+        RestaurantRead(**restaurant)
         for restaurant in restaurants
-        if restaurant["cuisine_type"].lower() == cuisine.lower()
-    ]
+        if restaurant["cuisine_type"].lower() == cuisine.lower()]
+    
+    if not matched:
+        raise RestaurantNotFoundError(
+            f"Restaurant of {cuisine} was not found"
+        )
+    return matched
+
+def restaurant_service_delete(restaurant_id: int) -> None:
+    deleted = restaurant_repo.restaurant_repo_delete_by_id(restaurant_id)
+
+    if not deleted:
+        raise RestaurantNotFoundError(
+            f"Restaurant with id {restaurant_id} was not found."
+        )
