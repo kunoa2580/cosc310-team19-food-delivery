@@ -1,51 +1,72 @@
 
 from fastapi import APIRouter, HTTPException, status
 from app.services.menu_item_service import (
-    menu_item_service_create,
-    menu_item_service_list,
-    menu_item_service_get_by_id,
-    menu_item_service_update,
-    menu_item_service_delete,
-    menu_item_service_get_by_restaurant,
-    menu_item_service_create_by_restaurant_name
+    menu_service_list,
+    menu_service_get_by_id,
+    menu_service_add,
+    menu_service_update,
+    menu_service_delete,
 )
-# from app.errors import MenuItemNotFoundError, DuplicateMenuItemError
-from app.schemas.menu_item import Menu_item_Create, Menu_item_Read, Menu_item_Update
+from app.errors import MenuItemNotFoundError, DuplicateMenuItemError, InvalidMenuItemUpdateError
+from app.schemas.menu_item import MenuItemUpdate ,MenuItemCreate, MenuItemRead
 
-router = APIRouter(prefix="/menu-items")
+router = APIRouter(prefix="/restaurant")
 
 # api endpoint assumed that user have already selected restaurant
+@router.get("/{restaurant_id}/menu-items", status_code=status.HTTP_200_OK)
+def menu_route_list_items(restaurant_id: int) -> list[MenuItemRead]:
+    return menu_service_list(restaurant_id)
 
-
-# @TheTureFADED
-@router.get("")
-def menu_item_route_get_list() -> list[Menu_item_Read]:
-    return menu_item_service_list()
-
-
-# @TheTureFADED
-@router.post("/{restaurant_id}/create")
-def menu_item_route_create(restaurant_id:int,new_menu_item: Menu_item_Create) -> Menu_item_Read:
-
+@router.get("/{restaurant_id}/menu-items/{item_id}", status_code=status.HTTP_200_OK)
+def menu_route_get_by_id(restaurant_id: int, item_id: int) -> MenuItemRead:
     try:
-        return menu_item_service_create(restaurant_id,new_menu_item)
-    except Exception as e:
-        raise e
-# @TheTureFADED
-@router.post("/by-name/{restaurant_name}/create")
-def menu_item_route_create(restaurant_name:str,new_menu_item: Menu_item_Create) -> Menu_item_Read:
-    return menu_item_service_create_by_restaurant_name(restaurant_name,new_menu_item)
+        item = menu_service_get_by_id(restaurant_id, item_id)
+    except MenuItemNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+    return item
 
-# @router.get("{restaurant_id}/menu-items/{menu_items_id}")
-# def menu_item_route_get_by_id(menu_items_id:int) -> Menu_item_Read:
-#     return menu_item_service_get_by_id(menu_items_id)
+@router.post("/{restaurant_id}/menu-items/create", status_code=status.HTTP_201_CREATED)
+def menu_route_add_item(restaurant_id: int, payload: MenuItemCreate) -> MenuItemRead:
+    try:
+        item = menu_service_add(restaurant_id, payload)
+    except DuplicateMenuItemError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(e),
+        )
+    return item
+	
+@router.delete("/{restaurant_id}/menu-items/delete/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+def menu_route_delete_item(restaurant_id: int, item_id: int) -> None:
+    try:
+        menu_service_delete(restaurant_id, item_id)
+    except MenuItemNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+    return None
 
-
-# @router.put("{res}/menu-items-update/{item_id}")
-# def menu_item_route_update(item_id:int, updated_menu_item: Menu_item_Update) -> None:
-#     return menu_item_service_update(item_id, updated_menu_item)
-
-
-# @router.get("/menu-items-filtered-by/{restaurant_name}")
-# def menu_item_route_get_by_restaurant(restaurant_name:str) -> list[Menu_item_Read]:
-#     return menu_item_service_get_by_restaurant(restaurant_name)
+@router.patch("/{restaurant_id}/menu-items/update/{item_id}", status_code=status.HTTP_200_OK)
+def menu_route_update_item(restaurant_id: int, item_id: int, payload: MenuItemUpdate) -> MenuItemRead:
+    try:
+        item = menu_service_update(restaurant_id, item_id, payload)
+    except MenuItemNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+    except InvalidMenuItemUpdateError as x:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(x),
+        )
+    except DuplicateMenuItemError as d:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(d),
+        )
+    return item

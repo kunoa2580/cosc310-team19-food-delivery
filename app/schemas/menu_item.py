@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-class Menu_item_Read(BaseModel):
+class MenuItemRead(BaseModel):
     item_id: int
     restaurant_id: int
     name: str
@@ -9,16 +9,15 @@ class Menu_item_Read(BaseModel):
     availability: bool
 
 
-class Menu_item_Create(BaseModel):
+class MenuItemCreate(BaseModel):
     name: str
     description: str
     price: float
     availability: bool = True
 
 
-class Menu_item_Update(BaseModel):
+class MenuItemUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
     price: float | None = None
     availability: bool | None = None
-    

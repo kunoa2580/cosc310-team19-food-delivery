@@ -4,14 +4,14 @@
     "restaurant_id": 1,
     "name": "Iced Peach Green Tea Lemonade",
     "description": "A refreshing blend of green tea, fresh peach syrup, and lemonade.",
-    "price": 4.99,
+    "price": 0.0,
     "availability": true
   },
   {
     "item_id": 2,
     "restaurant_id": 1,
-    "name": "Iced Peach Green Tea Lemonade",
-    "description": "A refreshing blend of green tea, fresh peach syrup, and lemonade.",
+    "name": "Iced Peach Black Tea Lemonade",
+    "description": "A refreshing blend of Black tea, fresh peach syrup, and lemonade.",
     "price": 4.99,
     "availability": true
   },
