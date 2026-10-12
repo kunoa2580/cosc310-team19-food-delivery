@@ -13,9 +13,12 @@ from app.schemas.restaurant import RestaurantCreate, RestaurantRead
 router = APIRouter(prefix="/restaurants")
 
 @router.get(
-        "",
-        response_model=list[RestaurantRead],
-        status_code = status.HTTP_200_OK)
+    "",
+    response_model=list[RestaurantRead],
+    status_code=status.HTTP_200_OK,
+    summary="List restaurants",
+    description="Return all restaurants. Returns an empty list if no restaurants exist."
+)
 def restaurant_route_get_list() -> list[RestaurantRead]:
     return restaurant_service_list()
 
@@ -35,10 +38,16 @@ def restaurant_route_create(new_restaurant: RestaurantCreate) -> RestaurantRead:
 
 
 @router.get(
-        "/filtered-by-{cuisine}-type",
-        response_model = list[RestaurantRead],
-        status_code = status.HTTP_200_OK)
-def restaurant_route_get_by_cuisine(cuisine: str | None = None) -> list[RestaurantRead]:
+    "/filtered-by-{cuisine}-type",
+    response_model=list[RestaurantRead],
+    status_code=status.HTTP_200_OK,
+    summary="Filter restaurants by cuisine",
+    description="Return restaurants matching the requested cuisine.",
+    responses={
+        404: {"description": "No restaurants found for the requested cuisine"}
+    }
+)
+def restaurant_route_get_by_cuisine(cuisine: str) -> list[RestaurantRead]:
     try:
         if cuisine is None:
             return restaurant_service_list()
@@ -51,10 +60,15 @@ def restaurant_route_get_by_cuisine(cuisine: str | None = None) -> list[Restaura
 #order matters here, has to be above {restaurant_id}
 
 @router.get(
-        "/{restaurant_id}",
-        response_model = RestaurantRead,  
-        # filters anything not declared in the model of RestaurantCreate
-        status_code = status.HTTP_200_OK) 
+    "/{restaurant_id}",
+    response_model=RestaurantRead,
+    status_code=status.HTTP_200_OK,
+    summary="Get restaurant details",
+    description="Return the details of a restaurant by its ID.",
+    responses={
+        404: {"description": "Restaurant not found"}
+    }
+)
 def restaurant_route_get_by_id(restaurant_id: int) -> RestaurantRead:
     try: 
         return restaurant_service_get_by_id(restaurant_id)
