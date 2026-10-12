@@ -16,7 +16,7 @@ This is our team project for COSC 310. The goal is to build a food delivery app 
 Python 3.10.0 and Git is required. Run these commands from the project root (the folder containing `requirements.txt` and `data/`).
 
 ```bash
-git clone https://github.com/TheTureFADED/cosc310-team19-food-delivery
+git clone https://github.com/kunoa2580/cosc310-team19-food-delivery-1
 cd cosc310-team19-food-delivery
 python -m venv .venv
 ```
