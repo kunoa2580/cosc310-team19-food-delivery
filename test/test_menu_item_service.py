@@ -10,8 +10,64 @@ from app.errors import MenuItemNotFoundError, DuplicateMenuItemError, InvalidMen
 import pytest
 from app.schemas.menu_item import MenuItemCreate,MenuItemRead,MenuItemUpdate
 
+sample= MenuItemCreate(  **{
+    "name": "Iced Peach Green Tea Lemonade",
+    "description": "A refreshing blend of green tea, fresh peach syrup, and lemonade.",
+    "price": 0.0,
+    "availability": True
+  })
+
+def test_menu_service_add_bad():
+    with pytest.raises(DuplicateMenuItemError):
+        menu_service_add(1, sample)
 
 
+def test_menu_service_add_good():
+    response = menu_service_add(2, sample)
+    assert isinstance(response, MenuItemRead)
+    assert response.restaurant_id == 2
+    assert response.name ==  "Iced Peach Green Tea Lemonade"
+
+def test_menu_service_delete_good():
+    response = menu_service_delete(1,1)
+    assert response is None
+
+def test_menu_service_delete_bad():
+    with pytest.raises(MenuItemNotFoundError):
+        menu_service_delete(999,999)
+
+def test_menu_service_get_by_id():
+    response = menu_service_get_by_id(1,1)
+    response.model_dump() == {
+    "item_id": 1,
+    "restaurant_id": 1,
+    "name": "Iced Peach Green Tea Lemonade",
+    "description": "A refreshing blend of green tea, fresh peach syrup, and lemonade.",
+    "price": 0.0,
+    "availability": True
+  }
+
+def test_menu_service_get_by_id_bad():
+    with pytest.raises(MenuItemNotFoundError) as exc_info:
+        menu_service_get_by_id(1000,12311)
+    assert str(exc_info.value) == "No menu item 12311 on restaurant 1000"
+
+
+def test_menu_service_list():
+    r = menu_service_list(1)
+    assert isinstance(r,list)
+    assert len(r) == 4
+    sample= MenuItemCreate(  **{
+    "name": "Iced Peach Green AND BLACK Tea Lemonade",
+    "description": "A refreshing blend of Green AND BLACK tea, fresh peach syrup, and lemonade.",
+    "price": 0.0,
+    "availability": True
+    })
+    menu_service_add(1, sample)
+    after = menu_service_list(1)
+    assert len(after) == 5
+    assert after[len(after)-1].restaurant_id == 1
+    assert after[len(after)-1].name == "Iced Peach Green AND BLACK Tea Lemonade"
 
 
 
