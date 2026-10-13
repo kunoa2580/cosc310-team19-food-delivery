@@ -72,7 +72,6 @@ def test_restaurant_service_get_by_cuisine_not_found(client):
     with pytest.raises(RestaurantNotFoundError):
         restaurant_service_get_by_cuisine("the cuisine")
 
-@pytest.mark.skip("Not required for M1")
 def test_restaurant_service_delete_good(client):
     response = restaurant_service_list()
     len_before_delete = len(response)
@@ -81,7 +80,7 @@ def test_restaurant_service_delete_good(client):
     len_after_delete = len(after_delete)
     assert len_before_delete-1 ==  len_after_delete
 
-@pytest.mark.skip("Not required for M1")
+
 def test_restaurant_service_delete_not_found(client):
     with pytest.raises(RestaurantNotFoundError):
         restaurant_service_delete(1000)

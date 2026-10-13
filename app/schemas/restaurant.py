@@ -34,4 +34,3 @@ class RestaurantUpdate(BaseModel):
     opening_hours: str | None = None
     rating: float | None = None
     availability: bool | None = None
-

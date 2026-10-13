@@ -21,7 +21,7 @@ classDiagram
         +restaurant_route_get_by_id(restaurant_id: int): RestaurantRead
         +restaurant_route_delete(restaurant_id: int): None
         +restaurant_route_search(input: str): RestaurantRead or None P
-        +restaurant_route_update(restaurant_id: int, payload: RestaurantUpdate): RestaurantRead P
+        +restaurant_route_update(restaurant_id: int, updates: RestaurantUpdate): RestaurantRead
     }
     note for RestaurantRoutes "TODO: restaurant_route_update() must return HTTP 404 when the restaurant is not found"
     class RestaurantService {
@@ -33,7 +33,7 @@ classDiagram
         +restaurant_service_get_by_cuisine(cuisine: str): list~RestaurantRead~
         +restaurant_service_delete(restaurant_id: int): None
         +restaurant_service_search(input: str): RestaurantRead or None P
-        +restaurant_service_update(restaurant_id: int, paylaod: RestaurantUpdate): RestaurantRead P
+        +restaurant_service_update(restaurant_id: int, updates: RestaurantUpdate): RestaurantRead 
     }
     class RestaurantRepository {
         <<class>>
@@ -47,7 +47,7 @@ classDiagram
         +restaurant_repo_create(restaurant_data: dict): dict
         +restaurant_repo_delete_by_id(restaurant_id: int): bool
         +restaurant_repo_search(input: str): dict or None P
-        +restaurant_repo_update(restaurant_id: int, changes: dict): dict or None P
+        +restaurant_repo_update_by_id(self, restaurant_id: int, updates: dict): dict or None
     }
     Application ..> RestaurantRoutes : includes router
     RestaurantRoutes ..> RestaurantService : calls

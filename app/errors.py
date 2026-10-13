@@ -7,3 +7,13 @@ class RestaurantNotFoundError(Exception):
 
 class MenuItemNotFoundError(Exception):
     pass
+
+
+class DuplicateMenuItemError(Exception):
+    pass
+
+class MenuItemRestaurantNotFoundError(Exception):
+    pass
+
+class InvalidMenuItemUpdateError(Exception):
+    pass
