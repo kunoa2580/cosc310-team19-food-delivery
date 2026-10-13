@@ -64,14 +64,6 @@
     "availability": true
   },
   {
-    "item_id": 9,
-    "restaurant_id": 1,
-    "name": "string",
-    "description": "string",
-    "price": 0.0,
-    "availability": true
-  },
-  {
     "item_id": 10,
     "restaurant_id": 1,
     "name": "AAAA",
@@ -86,5 +78,13 @@
     "description": "string",
     "price": 0.0,
     "availability": true
+  },
+  {
+    "name": "123",
+    "description": "description of 123",
+    "price": 123.0,
+    "availability": true,
+    "item_id": 12,
+    "restaurant_id": 2
   }
 ]
