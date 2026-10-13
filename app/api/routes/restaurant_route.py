@@ -4,11 +4,12 @@ from app.services.restaurant_service import (
     restaurant_service_list,
     restaurant_service_get_by_cuisine,
     restaurant_service_get_by_id,
-    restaurant_service_delete
+    restaurant_service_delete,
+    restaurant_service_update,
 )
 from app.errors import RestaurantNotFoundError, DuplicateRestaurantError
 
-from app.schemas.restaurant import RestaurantCreate, RestaurantRead
+from app.schemas.restaurant import RestaurantCreate, RestaurantRead, RestaurantUpdate
 
 router = APIRouter(prefix="/restaurants")
 
@@ -22,6 +23,7 @@ def restaurant_route_get_list() -> list[RestaurantRead]:
 
 @router.post( 
         "", 
+        response_model=RestaurantRead,
         status_code=status.HTTP_201_CREATED)
 def restaurant_route_create(new_restaurant: RestaurantCreate) -> RestaurantRead:
     try:
@@ -32,6 +34,19 @@ def restaurant_route_create(new_restaurant: RestaurantCreate) -> RestaurantRead:
             status_code = status.HTTP_409_CONFLICT,
             detail = str(e)
         )
+
+
+@router.patch(
+        "/{restaurant_id}",
+        response_model=RestaurantRead,
+        status_code=status.HTTP_200_OK)
+def restaurant_route_update(restaurant_id: int, updates: RestaurantUpdate) -> RestaurantRead:
+    try:
+        return restaurant_service_update(restaurant_id, updates)
+    except RestaurantNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+    except DuplicateRestaurantError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
 
 
 @router.get(
