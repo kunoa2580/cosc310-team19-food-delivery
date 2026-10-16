@@ -1,4 +1,3 @@
-
 ---
 name: Task
 about: Create a development task
