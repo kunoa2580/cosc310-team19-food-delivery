@@ -13,6 +13,14 @@ def test_get_restaurants_list(client):
     assert data[1]["id"] == 2
     assert data[2]["id"] == 3
 
+def test_get_restaurants_empty(client, tmp_path):
+    (tmp_path / "restaurants.json").write_text(
+        "[]", encoding="utf-8"
+    )
+    response = client.get("/restaurants")
+    assert response.status_code == 200
+    assert response.json() == []
+
 def test_get_restaurants_by_id(client):
     response = client.get("/restaurants/1")
     assert response.status_code == 200
