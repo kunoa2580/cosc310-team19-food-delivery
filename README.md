@@ -53,7 +53,7 @@ If `python` is not the command for Python on your computer, use `python3` (on ma
 | `GET` | `/restaurants/filtered-by-{cuisine}-type` | Returns restaurants whose cuisin is of `cuisine_type`. |
 | `GET` | `/restaurants` | Also returns all restaurants. |
 | `GET` | `/restaurants/{restaurant_id}` | Returns a restaurant by numeric ID. |
-| `DELETE` |  `/restaurants/{restaurant_id} | Delete a restaurant according to numeric ID. |
+| `DELETE` |  `/restaurants/{restaurant_id} `| Delete a restaurant according to numeric ID. |
 | `POST` | `/restaurants` | Adds a restaurant and returns it with a new ID. |
 
 To add a restaurant, open `/docs`, find `POST /restaurants`, and select **Try it out**. The request body needs these fields:
