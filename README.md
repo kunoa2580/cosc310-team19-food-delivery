@@ -49,12 +49,12 @@ If `python` is not the command for Python on your computer, use `python3` (on ma
 | --- | --- | --- |
 | `GET` | `/` | Returns a message that the backend is running. |
 | `GET` | `/health` | Returns `{"status": "ok"}`. |
-| `GET` | `/Restaurants` | Returns all restaurants. |
-| `GET` | `/Restaurants/filtered-by-{cuisine}-type` | Returns restaurants whose cuisin is of `cuisine_type`. |
-| `GET` | `/Restaurants` | Also returns all restaurants. |
-| `GET` | `/Restaurants/{restaurant_id}` | Returns a restaurant by numeric ID. |
-| `DELETE` |  `/Restaurants/{restaurant_id} | Delete a restaurant according to numeric ID. |
-| `POST` | `/Restaurants` | Adds a restaurant and returns it with a new ID. |
+| `GET` | `/restaurants` | Returns all restaurants. |
+| `GET` | `/restaurants/filtered-by-{cuisine}-type` | Returns restaurants whose cuisin is of `cuisine_type`. |
+| `GET` | `/restaurants` | Also returns all restaurants. |
+| `GET` | `/restaurants/{restaurant_id}` | Returns a restaurant by numeric ID. |
+| `DELETE` |  `/restaurants/{restaurant_id} `| Delete a restaurant according to numeric ID. |
+| `POST` | `/restaurants` | Adds a restaurant and returns it with a new ID. |
 
 To add a restaurant, open `/docs`, find `POST /restaurants`, and select **Try it out**. The request body needs these fields:
 
