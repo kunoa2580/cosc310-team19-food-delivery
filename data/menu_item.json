@@ -1,0 +1,73 @@
+[
+    {
+        "item_id": 1,
+        "restaurant_id": 1,
+        "name": "Iced Peach Green Tea Lemonade",
+        "description": "A refreshing blend of green tea, fresh peach syrup, and lemonade.",
+        "price": 4.99,
+        "availability": true
+    },
+
+    {
+        "item_id": 2,
+        "restaurant_id": 1,
+        "name": "Iced Peach Green Tea Lemonade",
+        "description": "A refreshing blend of green tea, fresh peach syrup, and lemonade.",
+        "price": 4.99,
+        "availability": true
+    },
+
+    {
+        "item_id": 3,
+        "restaurant_id": 2,
+        "name": "Avocado Toast",
+        "description": "Toasted sourdough bread topped with smashed avocado, cherry tomatoes, and a sprinkle of feta cheese.",
+        "price": 8.99,
+        "availability": true
+    },
+
+    {
+        "item_id": 4,
+        "restaurant_id": 2,
+        "name": "Really Big Hamburger",
+        "description": "A juicy beef patty served on a toasted bun with lettuce, tomato, and special sauce.",
+        "price": 10.99,
+        "availability": true
+    },
+
+    {
+        "item_id": 5,
+        "restaurant_id": 2,
+        "name": "Really Small Hamburger",
+        "description": "A juicy beef patty served on a toasted bun with lettuce, tomato, and special sauce.",
+        "price": 10.99,
+        "availability": true
+    },
+
+    {
+        "item_id": 6,
+        "restaurant_id": 2,
+        "name": "Chicken Tikka Masala",
+        "description": "Tender chicken pieces cooked in a creamy tomato sauce with aromatic spices.",
+        "price": 12.99,
+        "availability": true
+    },
+
+    {
+        "item_id": 7,
+        "restaurant_id": 3,
+        "name": "Lamb Tikka Masala",
+        "description": "Tender lamb pieces cooked in a creamy tomato sauce with aromatic spices.",
+        "price": 12.99,
+        "availability": true
+    },
+
+    {
+        "item_id": 8,
+        "restaurant_id": 3,
+        "name": "Steak Tikka Masala",
+        "description": "Tender steak pieces cooked in a creamy tomato sauce with aromatic spices.",
+        "price": 12.99,
+        "availability": true
+    }
+]
