@@ -7,6 +7,23 @@ from app.errors import DuplicateRestaurantError, RestaurantNotFoundError
 
 restaurant_repo = RestaurantRepository()
 
+
+def restaurant_service_update(restaurant_id: int, updates: RestaurantUpdate) -> RestaurantRead:
+    restaurant_service_get_by_id(restaurant_id)
+    changes = updates.model_dump(exclude_unset=True, exclude_none = True) #excluding updates with unfilled values
+
+    if "name" in changes:
+        for restaurant in restaurant_repo.restaurant_repo_list():
+            if restaurant["id"] != restaurant_id and restaurant["name"] == changes["name"]:
+                raise DuplicateRestaurantError(
+                    f"A restaurant with the name {changes['name']} already exists"
+                )
+
+    restaurant = restaurant_repo.restaurant_repo_update_by_id(restaurant_id, changes)
+    if restaurant is None:
+        raise RestaurantNotFoundError(f"Restaurant with id {restaurant_id} was not found.")
+    return RestaurantRead(**restaurant)
+
 def restaurant_service_create(new_restaurant: RestaurantCreate) -> RestaurantRead:
 
     restaurants = restaurant_repo.restaurant_repo_list()

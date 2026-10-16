@@ -25,6 +25,8 @@ class RestaurantRepository:
     def _save(self, restaurants: list[dict]) -> None:
         data_path = self._get_data_path()
 
+        data_path.parent.mkdir(parents=True, exist_ok=True)
+
         with open(data_path, "w", encoding="utf-8") as f:
             json.dump(restaurants, f, indent=2)
 
@@ -65,3 +67,12 @@ class RestaurantRepository:
                 return True
 
         return False
+
+    def restaurant_repo_update_by_id(self, restaurant_id: int, updates: dict) -> dict | None:
+        restaurants = self._load()
+        for restaurant in restaurants:
+            if restaurant["id"] == restaurant_id:
+                restaurant.update({restaurant_key: value for restaurant_key, value in updates.items() if restaurant_key != "id"})
+                self._save(restaurants)
+                return restaurant
+        return None
