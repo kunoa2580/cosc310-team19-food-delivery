@@ -1,4 +1,3 @@
-
 ---
 name: User Story
 about: Describe a feature from the user's perspective
