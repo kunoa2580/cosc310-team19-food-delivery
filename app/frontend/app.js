@@ -189,12 +189,8 @@ function readForm(formId) {
     const values = {};
     const inputs = element(formId).querySelectorAll("input, textarea");
     inputs.forEach(function (input) {
-        if (input.type === "checkbox") values[input.name] = input.checked;
-        else if (input.type === "number") values[input.name] = Number(input.value);
-        else values[input.name] = input.value.trim();
-        if (input.required && values[input.name] === "") {
-            throw new Error(input.name.replaceAll("_", " ") + " is required.");
-        }
+        // FastAPI/Pydantic validates text and parses numeric fields.
+        values[input.name] = input.type === "checkbox" ? input.checked : input.value;
     });
     return values;
 }
@@ -202,13 +198,17 @@ function readForm(formId) {
 function changedFields(values, original) {
     const changes = {};
     Object.keys(values).forEach(function (name) {
-        if (values[name] !== original[name]) changes[name] = values[name];
+        // Form text is compared with numeric API values in their displayed form.
+        const previous = typeof original[name] === "number" ? String(original[name]) : original[name];
+        if (values[name] !== previous) changes[name] = values[name];
     });
     return changes;
 }
 
 function newRestaurant() {
     selectedRestaurant = null;
+    menuItems = [];
+    element("delete-restaurant").hidden = true;
     element("managed-restaurant").value = "";
     element("restaurant-form-title").textContent = "Create a restaurant";
     element("save-restaurant").textContent = "Create restaurant";
@@ -223,6 +223,7 @@ async function selectRestaurant(id) {
     const items = await api("/restaurant/" + id + "/menu-items");
     selectedRestaurant = restaurant;
     menuItems = items;
+    element("delete-restaurant").hidden = false;
     element("managed-restaurant").value = String(id);
     element("restaurant-form-title").textContent = "Edit " + restaurant.name;
     element("save-restaurant").textContent = "Save restaurant changes";
@@ -245,6 +246,23 @@ async function saveRestaurant() {
     await loadRestaurants();
     await selectRestaurant(restaurant.id);
     showNotice(creating ? "Restaurant created. You can now add menu items." : "Restaurant changes saved.");
+}
+
+async function deleteRestaurant() {
+    if (!selectedRestaurant) throw new Error("Select a restaurant first.");
+    const restaurant = selectedRestaurant;
+    if (!window.confirm('Delete "' + restaurant.name + '"? This cannot be undone.')) return;
+
+    // Check current items before deleting through the management interface.
+    const items = await api("/restaurant/" + restaurant.id + "/menu-items");
+    if (items.length > 0) {
+        throw new Error("Delete all menu items from this restaurant before deleting the restaurant.");
+    }
+
+    await api("/restaurants/" + restaurant.id, "DELETE");
+    newRestaurant();
+    await loadRestaurants();
+    showNotice("Restaurant deleted.");
 }
 
 function resetMenuForm() {
@@ -313,6 +331,7 @@ bindClick("logout", function () {
 bindClick("refresh-restaurants", loadRestaurants);
 bindClick("back-to-restaurants", async function () { await loadRestaurants(); showView("browse-view"); });
 bindClick("new-restaurant", newRestaurant);
+bindClick("delete-restaurant", deleteRestaurant);
 bindClick("refresh-manager", async function () {
     const id = selectedRestaurant ? selectedRestaurant.id : null;
     await loadRestaurants();
