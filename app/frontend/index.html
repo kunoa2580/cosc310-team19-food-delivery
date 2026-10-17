@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Food Delivery · Team 19</title>
   <link rel="stylesheet" href="./styles.css">
-  <script src="./app.js" defer></script>
+  <script src="./app.js?v=backend-validation-1" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -27,9 +27,8 @@
 
     <section id="browse-view" class="view" hidden>
       <p class="eyebrow">DISCOVER</p><h1>Find your next meal.</h1>
-      <p class="muted">Restaurants and menus loaded from your backend.</p>
       <div class="toolbar">
-        <label class="grow">Search restaurants<input id="search" type="search" placeholder="Name, address, or cuisine"></label>
+        <label class="grow">Search restaurants<input id="search" type="search"></label>
         <label>Cuisine<select id="cuisine"><option value="">All cuisines</option></select></label>
         <label>Availability<select id="availability"><option value="">All restaurants</option><option value="open">Available only</option></select></label>
         <button id="refresh-restaurants" class="secondary">Refresh</button>
@@ -54,31 +53,34 @@
       </div>
       <div class="panel">
         <h2 id="restaurant-form-title">Create a restaurant</h2>
-        <form id="restaurant-form">
+        <form id="restaurant-form" novalidate>
           <div class="form-grid">
-            <label>Name<input name="name" required maxlength="120"></label>
-            <label>Cuisine<input name="cuisine_type" required placeholder="Italian"></label>
-            <label class="wide">Address<input name="address" required></label>
-            <label>Phone number<input name="phone_number" required></label>
-            <label>Email<input name="email" type="email" required></label>
-            <label>Website<input name="website" type="url" required placeholder="https://example.com"></label>
-            <label>Opening hours<input name="opening_hours" required placeholder="Mon-Sun: 11:00 AM - 9:00 PM"></label>
-            <label>Rating<input name="rating" type="number" min="0" max="5" step="0.1" required value="0"></label>
+            <label>Name<input name="name"></label>
+            <label>Cuisine<input name="cuisine_type"></label>
+            <label class="wide">Address<input name="address"></label>
+            <label>Phone number<input name="phone_number"></label>
+            <label>Email<input name="email" type="text"></label>
+            <label>Website<input name="website" type="text"></label>
+            <label>Opening hours<input name="opening_hours"></label>
+            <label>Rating<input name="rating" type="text" value="0"></label>
             <label class="checkbox"><input name="availability" type="checkbox" checked>Available</label>
           </div>
-          <button id="save-restaurant" type="submit">Create restaurant</button>
+          <div class="button-row">
+            <button id="save-restaurant" type="submit">Create restaurant</button>
+            <button id="delete-restaurant" type="button" class="danger" hidden>Delete restaurant</button>
+          </div>
         </form>
       </div>
       <div id="menu-workspace" hidden>
-        <div class="section-heading"><div><h2>Menu items</h2><p class="muted">Changes are saved through the menu API.</p></div><button id="new-menu-item">+ New item</button></div>
+        <div class="section-heading"><div><h2>Menu items</h2></div><button id="new-menu-item">+ New item</button></div>
         <div id="manager-menu" class="cards"></div>
         <div class="panel">
           <h2 id="menu-form-title">Add a menu item</h2>
-          <form id="menu-form">
+          <form id="menu-form" novalidate>
             <div class="form-grid">
-              <label>Name<input name="name" required></label>
-              <label>Price (CAD)<input name="price" type="number" min="0" step="0.01" required></label>
-              <label class="wide">Description<textarea name="description" required rows="3"></textarea></label>
+              <label>Name<input name="name"></label>
+              <label>Price (CAD)<input name="price" type="text"></label>
+              <label class="wide">Description<textarea name="description" rows="3"></textarea></label>
               <label class="checkbox"><input name="availability" type="checkbox" checked>Available</label>
             </div>
             <div class="button-row"><button id="save-menu-item" type="submit">Add item</button><button id="cancel-menu-edit" type="button" class="secondary">Clear form</button></div>
