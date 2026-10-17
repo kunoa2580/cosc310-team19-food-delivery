@@ -6,7 +6,10 @@ from app.api.routes import restaurant_route, menu_item_route
 # uvicorn app.main:app --reload
 # http://127.0.0.1:8000/docs
 
-app = FastAPI(title="We will go through this semester like every other semester", version="0.0.0.0.1")
+app = FastAPI(
+    title="COSC 310 Team 19 Food Delivery",
+    version="M1",
+)
 
 app.include_router(restaurant_route.router)
 # feature/menu-item-schema
