@@ -1,7 +1,7 @@
 
 import pytest
 
-from app.services.menu_service import (
+from app.services.menu_item_service import (
     menu_service_list,
     menu_service_get_by_id
 )
