@@ -48,14 +48,26 @@ def test_menu_route_add_item_GOOD(client):
         "description": "This is a test item",
         "price": 9.99
     }
-    response = client.post("/restaurant/10/menu-items/create", json=payload)
+    response = client.post("/restaurant/3/menu-items/create", json=payload)
     data = response.json()
     assert response.status_code == 201
     assert data["name"] == payload["name"]
     assert data["description"] == payload["description"]
     assert data["price"] == payload["price"]
-    assert data["restaurant_id"] == 10
+    assert data["restaurant_id"] == 3
     assert "item_id" in data
+
+
+def test_menu_route_add_item_restaurant_not_found(client):
+    payload = {
+        "name": "Test Item",
+        "description": "This is a test item",
+        "price": 9.99
+    }
+    response = client.post("/restaurant/999/menu-items/create", json=payload)
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Restaurant with id 999 was not found."
+
 
 def test_menu_route_add_item_BAD(client):
     payload = {
@@ -63,8 +75,8 @@ def test_menu_route_add_item_BAD(client):
         "description": "This is a test item",
         "price": 9.99
     }
-    client.post("/restaurant/10/menu-items/create", json=payload)
-    response = client.post("/restaurant/10/menu-items/create", json=payload)
+    client.post("/restaurant/3/menu-items/create", json=payload)
+    response = client.post("/restaurant/3/menu-items/create", json=payload)
     assert response.json()["detail"] ==  "Test Item is Duplicate"
     assert response.status_code == 409
 

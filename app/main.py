@@ -1,15 +1,27 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 from app.api.routes import restaurant_route, menu_item_route
 
 # uvicorn app.main:app --reload
 # http://127.0.0.1:8000/docs
 
-app = FastAPI(title="We will go through this semester like every other semester", version="0.0.0.0.1")
+app = FastAPI(
+    title="COSC 310 Team 19 Food Delivery",
+    version="M1",
+)
 
 app.include_router(restaurant_route.router)
 # feature/menu-item-schema
 # To add router for menu item for users could view, create, edit and remove item details like price, name or etc. 
 app.include_router(menu_item_route.router)
+
+# Serve the plain HTML/CSS/JavaScript frontend from the same origin as the API.
+app.mount(
+    "/ui",
+    StaticFiles(directory=Path(__file__).resolve().parent / "frontend", html=True),
+    name="frontend",
+)
 
 @app.get("/")
 def root():

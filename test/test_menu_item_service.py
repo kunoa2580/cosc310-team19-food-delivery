@@ -6,7 +6,7 @@ from app.services.menu_item_service import (
     menu_service_delete,
 )
 
-from app.errors import MenuItemNotFoundError, DuplicateMenuItemError, InvalidMenuItemUpdateError
+from app.errors import MenuItemNotFoundError, DuplicateMenuItemError, InvalidMenuItemUpdateError, MenuItemRestaurantNotFoundError
 import pytest
 from app.schemas.menu_item import MenuItemCreate,MenuItemRead,MenuItemUpdate
 
@@ -21,6 +21,9 @@ def test_menu_service_add_bad():
     with pytest.raises(DuplicateMenuItemError):
         menu_service_add(1, sample)
 
+def test_menu_service_add_restaurant_not_found():
+    with pytest.raises(MenuItemRestaurantNotFoundError):
+        menu_service_add(999, sample)
 
 def test_menu_service_add_good():
     response = menu_service_add(2, sample)

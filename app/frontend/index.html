@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Food Delivery · Team 19</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js?v=backend-validation-1" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div><strong>Food Delivery</strong><span class="subtitle">COSC 310 · Team 19</span></div>
+    <div class="header-actions"><span id="role-label"></span><button id="logout" class="secondary" hidden>Change role</button></div>
+  </header>
+  <main>
+    <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+
+    <section id="login-view" class="view login">
+      <p class="eyebrow">WELCOME</p>
+      <h1>Choose your view.</h1>
+      <p class="muted">Browse restaurants or manage your restaurant and menu.</p>
+      <div class="role-grid">
+        <div class="panel"><h2>Customer</h2><p>Find a restaurant, see its details, and browse the menu.</p><button id="customer-login">Continue as customer</button></div>
+        <div class="panel"><h2>Restaurant</h2><p>Create a restaurant, edit its information, and manage menu items.</p><button id="restaurant-login">Continue as restaurant</button></div>
+      </div>
+    </section>
+
+    <section id="browse-view" class="view" hidden>
+      <p class="eyebrow">DISCOVER</p><h1>Find your next meal.</h1>
+      <div class="toolbar">
+        <label class="grow">Search restaurants<input id="search" type="search"></label>
+        <label>Cuisine<select id="cuisine"><option value="">All cuisines</option></select></label>
+        <label>Availability<select id="availability"><option value="">All restaurants</option><option value="open">Available only</option></select></label>
+        <button id="refresh-restaurants" class="secondary">Refresh</button>
+      </div>
+      <p id="restaurant-count" class="muted"></p>
+      <div id="restaurant-list" class="cards"></div>
+    </section>
+
+    <section id="details-view" class="view" hidden>
+      <button id="back-to-restaurants" class="secondary">← Restaurants</button>
+      <div id="restaurant-details" class="panel details"></div>
+      <h2>Menu</h2><p class="muted">Browse current items and availability.</p>
+      <div id="customer-menu" class="cards"></div>
+    </section>
+
+    <section id="manage-view" class="view" hidden>
+      <p class="eyebrow">RESTAURANT WORKSPACE</p><h1>Manage your restaurant.</h1>
+      <div class="toolbar">
+        <label class="grow">Select a restaurant<select id="managed-restaurant"><option value="">Choose a restaurant</option></select></label>
+        <button id="refresh-manager" class="secondary">Refresh</button>
+        <button id="new-restaurant">+ New restaurant</button>
+      </div>
+      <div class="panel">
+        <h2 id="restaurant-form-title">Create a restaurant</h2>
+        <form id="restaurant-form" novalidate>
+          <div class="form-grid">
+            <label>Name<input name="name"></label>
+            <label>Cuisine<input name="cuisine_type"></label>
+            <label class="wide">Address<input name="address"></label>
+            <label>Phone number<input name="phone_number"></label>
+            <label>Email<input name="email" type="text"></label>
+            <label>Website<input name="website" type="text"></label>
+            <label>Opening hours<input name="opening_hours"></label>
+            <label>Rating<input name="rating" type="text" value="0"></label>
+            <label class="checkbox"><input name="availability" type="checkbox" checked>Available</label>
+          </div>
+          <div class="button-row">
+            <button id="save-restaurant" type="submit">Create restaurant</button>
+            <button id="delete-restaurant" type="button" class="danger" hidden>Delete restaurant</button>
+          </div>
+        </form>
+      </div>
+      <div id="menu-workspace" hidden>
+        <div class="section-heading"><div><h2>Menu items</h2></div><button id="new-menu-item">+ New item</button></div>
+        <div id="manager-menu" class="cards"></div>
+        <div class="panel">
+          <h2 id="menu-form-title">Add a menu item</h2>
+          <form id="menu-form" novalidate>
+            <div class="form-grid">
+              <label>Name<input name="name"></label>
+              <label>Price (CAD)<input name="price" type="text"></label>
+              <label class="wide">Description<textarea name="description" rows="3"></textarea></label>
+              <label class="checkbox"><input name="availability" type="checkbox" checked>Available</label>
+            </div>
+            <div class="button-row"><button id="save-menu-item" type="submit">Add item</button><button id="cancel-menu-edit" type="button" class="secondary">Clear form</button></div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

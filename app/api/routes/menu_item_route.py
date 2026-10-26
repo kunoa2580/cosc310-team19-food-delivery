@@ -7,7 +7,7 @@ from app.services.menu_item_service import (
     menu_service_update,
     menu_service_delete,
 )
-from app.errors import MenuItemNotFoundError, DuplicateMenuItemError, InvalidMenuItemUpdateError
+from app.errors import MenuItemNotFoundError, DuplicateMenuItemError, InvalidMenuItemUpdateError, MenuItemRestaurantNotFoundError
 from app.schemas.menu_item import MenuItemUpdate ,MenuItemCreate, MenuItemRead
 
 router = APIRouter(prefix="/restaurant")
@@ -32,6 +32,11 @@ def menu_route_get_by_id(restaurant_id: int, item_id: int) -> MenuItemRead:
 def menu_route_add_item(restaurant_id: int, payload: MenuItemCreate) -> MenuItemRead:
     try:
         item = menu_service_add(restaurant_id, payload)
+    except MenuItemRestaurantNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
     except DuplicateMenuItemError as e:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
