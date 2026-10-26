@@ -1,10 +1,12 @@
 from app.repositories.menu_item_repository import MenuItemRepository
 from app.schemas.menu_item import MenuItemUpdate ,MenuItemCreate, MenuItemRead
+from app.services.restaurant_service import restaurant_service_get_by_id
 from app.errors import (
     MenuItemNotFoundError,
     DuplicateMenuItemError,
     MenuItemRestaurantNotFoundError,
-    InvalidMenuItemUpdateError
+    InvalidMenuItemUpdateError,
+    RestaurantNotFoundError
 )
 
 menu_repo = MenuItemRepository() 
@@ -24,6 +26,10 @@ def menu_service_get_by_id(restaurant_id: int, item_id: int) -> MenuItemRead :
     return MenuItemRead(**record)
 
 def menu_service_add(restaurant_id: int, payload: MenuItemCreate) -> MenuItemRead:
+    try:
+        restaurant_service_get_by_id(restaurant_id)
+    except RestaurantNotFoundError:
+        raise MenuItemRestaurantNotFoundError(f"Restaurant with id {restaurant_id} was not found.")
     menu_items = menu_service_list(restaurant_id)
     for i in menu_items:
         if i.name == payload.name:
