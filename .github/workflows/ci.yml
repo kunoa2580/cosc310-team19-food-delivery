@@ -32,7 +32,8 @@ jobs:
 
       - name: Test System initialization
         if: ${{ success() }}
-        run: python -m uvicorn app.main:app --reload || exit 1
+        run: |
+          python -m uvicorn app.main:app --port 8000 & sleep 10 && test "$(curl -sf http://127.0.0.1:8000/health)" = '{"status":"ok"}'
 
       - name: Run pytest
         if: ${{ success() }}
