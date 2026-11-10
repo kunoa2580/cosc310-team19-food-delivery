@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
-from app.api.routes import restaurant_route, menu_item_route
+from app.api.routes import restaurant_route, menu_item_route,shopping_cart_route
 
 # uvicorn app.main:app --reload
 # http://127.0.0.1:8000/docs
@@ -15,6 +15,8 @@ app.include_router(restaurant_route.router)
 # feature/menu-item-schema
 # To add router for menu item for users could view, create, edit and remove item details like price, name or etc. 
 app.include_router(menu_item_route.router)
+# To add router for shopping cart for users could add, remove, clear, view and checkout items in the shopping cart.
+app.include_router(shopping_cart_route.router)
 
 # Serve the plain HTML/CSS/JavaScript frontend from the same origin as the API.
 app.mount(
