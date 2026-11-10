@@ -1,22 +1,31 @@
 
 from fastapi import APIRouter, HTTPException, status
 import app
-import app.services.shopping_cart_service as shopping_cart_service
+
+
+from app.services.shopping_cart_service import (
+
+    shopping_cart_service,
+
+)
+
+
+
 # import app.services.customer_service as customer_service # assume customer service exists and has a method to get customer by ID
 # import app.auth as auth # assume auth module exists for authentication and authorization
 import app.services.menu_item_service as menu_item_service
 
 router = APIRouter()
-service = shopping_cart_service.shopping_cart_service()
+service = shopping_cart_service()
 
 class shopping_cart_route:
     
-    @router.post("/cart/add/{user_id}/{item_id}/{quantity}", status_code=status.HTTP_200_OK)
+    @router.post("/cart/add/{user_id}/{item_id}/{quantity}?", status_code=status.HTTP_200_OK)
     def add_item(self, user_id, item_id, quantity=1):
         try:
             # customer = customer_service.get_customer_by_id(user_id) # assume customer service exists and has a method to get customer by ID
             item = menu_item_service.get_menu_item_by_id(item_id)
-            added_item = service.add_item_to_cart(user_id, item_id, quantity)
+            added_item = service.add_item_to_cart_service(user_id, item_id, quantity)
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -41,11 +50,11 @@ class shopping_cart_route:
         return {"message": f"Cart cleared for user {user_id}"}
 
     @router.get("/cart/view/{user_id}", status_code=status.HTTP_200_OK)
-    def view_cart(self, user_id):
+    def view_cart(self, user_id) -> dict:
         
         try:
             customer = app.services.customer_service.get_customer_by_id(user_id)  # assume customer service exists and has a method to get customer by ID
-            cart_items = service.get_cart_items(user_id)
+            cart_items = service.get_cart_items_service(user_id)
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
