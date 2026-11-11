@@ -52,3 +52,15 @@ def test_order_route_checkout_inactive_customer(client, env):
     assert response.status_code == 403
     assert response.json()["detail"] == "Customer 7 is not active"
     assert env.cleared == []
+
+def test_order_route_get_by_id_good(client, env):
+    created = client.post("/customers/7/checkout").json()
+    response = client.get(f"/orders/{created['order_id']}")
+    assert response.status_code == 200
+    assert response.json() == created
+
+
+def test_order_route_get_by_id_not_found(client):
+    response = client.get("/orders/999")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Order 999 was not found"

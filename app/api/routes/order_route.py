@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
-from app.services.order_service import order_service_checkout
-from app.errors import CheckoutCustomerInactiveError, EmptyCartError, InvalidCartError
+from app.services.order_service import order_service_checkout, order_service_get_by_id
+from app.errors import CheckoutCustomerInactiveError, EmptyCartError, InvalidCartError, OrderNotFoundError
 from app.schemas.order import OrderRead
 
 router = APIRouter()
@@ -31,6 +31,23 @@ def order_route_checkout(customer_id: int) -> OrderRead:
     except (EmptyCartError, InvalidCartError) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    return order
+
+@router.get(
+    "/orders/{order_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Get an order by id",
+    description="Returns the order as saved at checkout, with the item names and prices at that time.",
+    responses={404: {"description": "Order not found"}},
+)
+def order_route_get_by_id(order_id: int) -> OrderRead:
+    try:
+        order = order_service_get_by_id(order_id)
+    except OrderNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
         )
     return order

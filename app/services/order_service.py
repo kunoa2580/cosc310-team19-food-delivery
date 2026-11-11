@@ -9,6 +9,7 @@ from app.errors import (
     EmptyCartError,
     InvalidCartError,
     MenuItemNotFoundError,
+    OrderNotFoundError,
     RestaurantNotFoundError,
 )
 
@@ -72,4 +73,12 @@ def order_service_checkout(customer_id: int) -> OrderRead:
     )
 
     _clear_cart(customer_id)
+    return OrderRead(**record)
+
+
+
+def order_service_get_by_id(order_id: int) -> OrderRead:
+    record = order_repo.order_repo_get_by_id(order_id)
+    if record is None:
+        raise OrderNotFoundError(f"Order {order_id} was not found")
     return OrderRead(**record)
