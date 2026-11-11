@@ -26,3 +26,6 @@ class InvalidCartError(Exception):
 
 class CheckoutCustomerInactiveError(Exception):
     pass
+
+class OrderNotFoundError(Exception):
+    pass

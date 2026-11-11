@@ -58,3 +58,16 @@ def test_order_repo_does_not_touch_committed_data():
     before = committed_file.read_text()
     OrderRepository().order_repo_create(sample)
     assert committed_file.read_text() == before
+
+def test_order_repo_list_by_customer():
+    repo = OrderRepository()
+    mine = repo.order_repo_create(sample)
+    other = repo.order_repo_create({**sample, "customer_id": 2})
+    mine_again = repo.order_repo_create(sample)
+    assert repo.order_repo_list_by_customer(1) == [mine, mine_again]
+    assert repo.order_repo_list_by_customer(2) == [other]
+
+
+def test_order_repo_list_by_customer_none():
+    repo = OrderRepository()
+    assert repo.order_repo_list_by_customer(999) == []
