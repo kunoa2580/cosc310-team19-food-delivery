@@ -64,3 +64,17 @@ def test_order_route_get_by_id_not_found(client):
     response = client.get("/orders/999")
     assert response.status_code == 404
     assert response.json()["detail"] == "Order 999 was not found"
+
+
+def test_order_route_get_by_customer_good(client, env):
+    first = client.post("/customers/7/checkout").json()
+    second = client.post("/customers/7/checkout").json()
+    response = client.get("/customers/7/orders")
+    assert response.status_code == 200
+    assert response.json() == [first, second]
+
+
+def test_order_route_get_by_customer_none(client):
+    response = client.get("/customers/999/orders")
+    assert response.status_code == 200
+    assert response.json() == []

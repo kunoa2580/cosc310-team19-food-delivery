@@ -4,7 +4,7 @@ from app.schemas.order import CheckoutCart, CheckoutCartItem
 from app.schemas.menu_item import MenuItemUpdate
 from app.schemas.restaurant import RestaurantUpdate
 from app.services import order_service
-from app.services.order_service import order_service_checkout, order_service_get_by_id
+from app.services.order_service import order_service_checkout, order_service_get_by_id, order_service_get_by_customer
 from app.services.menu_item_service import menu_service_update
 from app.services.restaurant_service import restaurant_service_update
 from app.errors import CheckoutCustomerInactiveError, EmptyCartError, InvalidCartError, OrderNotFoundError
@@ -136,3 +136,13 @@ def test_order_service_get_by_id_keeps_checkout_price(env):
 def test_order_service_get_by_id_not_found():
     with pytest.raises(OrderNotFoundError):
         order_service_get_by_id(999)
+
+def test_order_service_get_by_customer(env):
+    first = order_service_checkout(7)
+    second = order_service_checkout(7)
+    order_service_checkout(8)
+    assert order_service_get_by_customer(7) == [first, second]
+
+
+def test_order_service_get_by_customer_none():
+    assert order_service_get_by_customer(999) == []

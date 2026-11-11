@@ -1,11 +1,13 @@
 from fastapi import APIRouter, HTTPException, status
-from app.services.order_service import order_service_checkout, order_service_get_by_id
+from app.services.order_service import order_service_checkout, order_service_get_by_id, order_service_get_by_customer
 from app.errors import CheckoutCustomerInactiveError, EmptyCartError, InvalidCartError, OrderNotFoundError
 from app.schemas.order import OrderRead
 
 router = APIRouter()
 
 
+# US1 Checkout: turn the customer's active cart into a saved order.
+# Service errors are translated here: inactive customer -> 403, empty or invalid cart -> 400.
 # customer_id is a path parameter until the auth dependency (current user) is merged.
 @router.post(
     "/customers/{customer_id}/checkout",
@@ -35,6 +37,10 @@ def order_route_checkout(customer_id: int) -> OrderRead:
         )
     return order
 
+
+# US2 View one order: look up a saved order by its id (404 if it does not exist).
+# Any caller can read any order until the auth dependency is merged;
+# then restrict it to the order's owner.
 @router.get(
     "/orders/{order_id}",
     status_code=status.HTTP_200_OK,
@@ -51,3 +57,16 @@ def order_route_get_by_id(order_id: int) -> OrderRead:
             detail=str(e),
         )
     return order
+
+
+# US3 Order history: list all orders placed by one customer (empty list if none).
+# Any caller can read any customer's orders until the auth dependency is merged,
+# and an unknown customer returns an empty list until the customer service is merged.
+@router.get(
+    "/customers/{customer_id}/orders",
+    status_code=status.HTTP_200_OK,
+    summary="List a customer's orders",
+    description="Returns all orders placed by the customer, or an empty list if there are none.",
+)
+def order_route_get_by_customer(customer_id: int) -> list[OrderRead]:
+    return order_service_get_by_customer(customer_id)
