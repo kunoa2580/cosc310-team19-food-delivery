@@ -16,3 +16,12 @@ class OrderRead(BaseModel):
     total: float = Field(ge=0)
     status: str
     created_at: str
+
+class CheckoutCartItem(BaseModel):
+    item_id: int
+    quantity: int
+
+
+class CheckoutCart(BaseModel):
+    restaurant_id: int
+    items: list[CheckoutCartItem]

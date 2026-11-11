@@ -17,3 +17,12 @@ class MenuItemRestaurantNotFoundError(Exception):
 
 class InvalidMenuItemUpdateError(Exception):
     pass
+
+class EmptyCartError(Exception):
+    pass
+
+class InvalidCartError(Exception):
+    pass
+
+class CheckoutCustomerInactiveError(Exception):
+    pass
