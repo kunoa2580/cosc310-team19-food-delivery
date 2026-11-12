@@ -17,3 +17,6 @@ class MenuItemRestaurantNotFoundError(Exception):
 
 class InvalidMenuItemUpdateError(Exception):
     pass
+
+class CartItemNotFoundError(Exception):
+    pass

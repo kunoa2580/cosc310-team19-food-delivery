@@ -1,0 +1,46 @@
+[
+  {
+    "cart_id": 1,
+    "customer_id": 1,
+    "checkout_status": false,
+    "items": [
+      {
+        "item_id": 1,
+        "restaurant_id": 1,
+        "name": "Iced Peach Green Tea Lemonade",
+        "price": 0.0,
+        "availability": true,
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "cart_id": 2,
+    "customer_id": 2,
+    "checkout_status": false,
+    "items": [
+      {
+        "item_id": 2,
+        "restaurant_id": 1,
+        "name": "Iced Peach Black Tea Lemonade",
+        "price": 4.99,
+        "availability": true,
+        "quantity": 1
+      },
+      {
+        "item_id": 1,
+        "restaurant_id": 1,
+        "name": "Really Small Hamburger",
+        "price": 10.99,
+        "availability": true,
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "cart_id": 3,
+    "customer_id": 123,
+    "items": [],
+    "checkout_status": false
+  }
+]
