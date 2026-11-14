@@ -21,19 +21,7 @@ class ShoppingCartRepository:
     ```
     to save updated/edited/deleted/added data give with data have been edited/deleted/updated opetions
 
-    ```
-    _add
-    ``` 
-    load old data, get data want to added with given customer_id, use custmer_id to find cart_id find items and save new item into items call save function to save
-    ```
-    _updated
-    ``` 
-    load old data, get data want to updated with given customer_id, use customer_id find cart_id find items and updated items quatities then save will be called to save new updated
-    ```
-    _delete
-    ```
-    load old data, get data want deleted with given customer_id, use customer_id find cart_id find items and delelete item and save function will called to save new deleted items
-
+   
 
      sample data strcutre in cart for one user
      Json structure for a shopping cart:
@@ -64,9 +52,11 @@ class ShoppingCartRepository:
     }
     ```
 
-    for customer carts in all carts
+```    for customer carts in all carts
         if customer id 
             retrun customer cart
+            
+    ```
     
 
 
@@ -152,6 +142,8 @@ class ShoppingCartRepository:
             if cart["customer_id"] == customer_id:
                 for cart_item in cart["items"]:
                     if cart_item["item_id"] == item_id:
+                        if quantity <= 0:
+                            cart["items"].remove(cart_item)
                         cart_item["quantity"] = quantity
                         self._save(all_carts)
                         return cart["items"]

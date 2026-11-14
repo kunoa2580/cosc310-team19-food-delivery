@@ -10,7 +10,23 @@
         "name": "Iced Peach Green Tea Lemonade",
         "price": 0.0,
         "availability": true,
-        "quantity": 1
+        "quantity": 7
+      },
+      {
+        "item_id": 7,
+        "restaurant_id": 3,
+        "name": "Lamb Tikka Masala",
+        "price": 12.99,
+        "availability": true,
+        "quantity": 12
+      },
+      {
+        "item_id": 5,
+        "restaurant_id": 2,
+        "name": "Really Small Hamburger",
+        "price": 10.99,
+        "availability": true,
+        "quantity": 11
       }
     ]
   },

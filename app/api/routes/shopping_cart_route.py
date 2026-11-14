@@ -11,7 +11,7 @@ from app.services.shopping_cart_service import (
 # import app.services.customer_service as customer_service # assume customer service exists and has a method to get customer by ID
 # import app.auth as auth # assume auth module exists for authentication and authorization
 import app.services.menu_item_service as menu_item_service
-from app.schemas.shopping_cart import ItemInCartCreate, ItemInCartRead
+from app.schemas.shopping_cart import ItemInCartCreate, ItemInCartRead, ShoppingCartCreate,ShoppingCartRead, ShoppingCartUpdate
 router = APIRouter()
 service = shopping_cart_service()
 
@@ -35,7 +35,7 @@ class shopping_cart_route:
     """
     
 
-    @router.post("/cart/add/{customer_id}/{restaurant_id}/{item_id}/{quantity}", status_code=status.HTTP_201_CREATED)
+    @router.post("/cart/add/{customer_id}/{restaurant_id}/{item_id}/{quantity}", status_code=status.HTTP_201_CREATED, response_model=list[ItemInCartCreate])
     def add_item( customer_id:int, restaurant_id:int, item_id:int, quantity:int=1):
         try:
             # customer = customer_service.get_customer_by_id(customer_id) # assume customer service exists and has a method to get customer by ID
@@ -47,14 +47,17 @@ class shopping_cart_route:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Customer with ID {customer_id} not found.",
             )
-        return {"message": f"Added {quantity} of item {item_id} to cart for user {customer_id}"}
+        # return {"message": f"Added {quantity} of item {item_id} to cart for user {customer_id}"}
+        return added_item
     
-    @router.patch("/cart/edit/{customer_id}/{restaurant_id}/{item_id}/{quantity}", status_code=status.HTTP_200_OK)
+    @router.patch("/cart/edit/{customer_id}/{item_id}/{quantity}", status_code=status.HTTP_200_OK, response_model=ShoppingCartUpdate)
     def edit_item( customer_id:int,  item_id:int, quantity:int=1):
         try:
             # customer = customer_service.get_customer_by_id(customer_id) # assume customer service exists and has a method to get customer by ID
-            
-            edited_item = service.cart_edit_item_to_cart_service(customer_id,item_id, quantity)
+            if quantity <= 0:
+                edited_item = service.cart_remove_item_from_cart_service(customer_id, item_id)
+            else:
+                edited_item = service.cart_edit_item_to_cart_service(customer_id,item_id, quantity)
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

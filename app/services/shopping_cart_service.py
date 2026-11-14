@@ -18,7 +18,7 @@ repository = ShoppingCartRepository()
 class shopping_cart_service:
 
 
-    def cart_add_item_to_cart_service(self, customer_id:int, restaurant_id:int, item_id:int, quantity:int) -> bool:
+    def cart_add_item_to_cart_service(self, customer_id:int, restaurant_id:int, item_id:int, quantity:int) -> dict:
         try:
             
             """{
@@ -43,7 +43,7 @@ class shopping_cart_service:
             print(f"Error adding item to cart: {e}")
             return False
 
-    def cart_edit_item_to_cart_service(self, customer_id: int, item_id: int, quantity: int) -> bool:
+    def cart_edit_item_to_cart_service(self, customer_id: int, item_id: int, quantity: int) -> list[dict]:
         cart = repository.cart_edit_item_repo(customer_id, item_id, quantity)
         if cart is None:
             raise Exception(
