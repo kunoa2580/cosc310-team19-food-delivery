@@ -45,6 +45,7 @@ class shopping_cart_service:
 
     def cart_edit_item_to_cart_service(self, customer_id: int, item_id: int, quantity: int) -> list[dict]:
         cart = repository.cart_edit_item_repo(customer_id, item_id, quantity)
+
         if cart is None:
             raise Exception(
                 f"No item {item_id} in cart for customer {customer_id}"

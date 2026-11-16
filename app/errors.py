@@ -20,3 +20,6 @@ class InvalidMenuItemUpdateError(Exception):
 
 class CartItemNotFoundError(Exception):
     pass
+
+class CustomerNotFoundError(Exception):
+    pass

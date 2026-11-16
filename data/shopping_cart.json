@@ -10,15 +10,31 @@
         "name": "Iced Peach Green Tea Lemonade",
         "price": 0.0,
         "availability": true,
-        "quantity": 7
+        "quantity": 38
       },
       {
-        "item_id": 7,
-        "restaurant_id": 3,
-        "name": "Lamb Tikka Masala",
-        "price": 12.99,
+        "item_id": 2,
+        "restaurant_id": 1,
+        "name": "Iced Peach Black Tea Lemonade",
+        "price": 4.99,
         "availability": true,
-        "quantity": 12
+        "quantity": 4
+      },
+      {
+        "item_id": 3,
+        "restaurant_id": 2,
+        "name": "Avocado Toast",
+        "price": 8.99,
+        "availability": true,
+        "quantity": 6
+      },
+      {
+        "item_id": 4,
+        "restaurant_id": 2,
+        "name": "Really Big Hamburger",
+        "price": 10.99,
+        "availability": true,
+        "quantity": 4
       },
       {
         "item_id": 5,
@@ -26,7 +42,7 @@
         "name": "Really Small Hamburger",
         "price": 10.99,
         "availability": true,
-        "quantity": 11
+        "quantity": 5
       }
     ]
   },
@@ -42,14 +58,6 @@
         "price": 4.99,
         "availability": true,
         "quantity": 1
-      },
-      {
-        "item_id": 1,
-        "restaurant_id": 1,
-        "name": "Really Small Hamburger",
-        "price": 10.99,
-        "availability": true,
-        "quantity": 2
       }
     ]
   },

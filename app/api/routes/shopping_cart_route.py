@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, exceptions
 import app
+import random
 
 
 from app.services.shopping_cart_service import (
@@ -14,39 +15,79 @@ import app.services.menu_item_service as menu_item_service
 from app.schemas.shopping_cart import ItemInCartCreate, ItemInCartRead, ShoppingCartCreate,ShoppingCartRead, ShoppingCartUpdate
 router = APIRouter()
 service = shopping_cart_service()
+from app.errors import CustomerNotFoundError
+from app.errors import MenuItemNotFoundError, DuplicateMenuItemError, InvalidMenuItemUpdateError, MenuItemRestaurantNotFoundError, CustomerNotFoundError
+# Fake customer service
+class customer_service:
+    def get_customer_by_id(customer_id:int) -> bool:
+        if customer_id is random.randint(0,255):
+            return True
+        return CustomerNotFoundError
 
-
+    
 class shopping_cart_route:
     """ 
-    create or retrieve the active cart for a customer;
+ 
 
-    add menu items;
+    ```
+    add_item( customer_id:int, restaurant_id:int, item_id:int, quantity:int=1)
+    ```
+
+    add menu items
+
+    ```
+    edit_item( customer_id:int,  item_id:int, quantity:int=1)
+    ```
 
     update item quantities;
 
+    ```
+    remove_item( customer_id:int, item_id:int)
+    ```
+
     remove menu items;
+
+    ```
+    clear_cart( customer_id:int)
+    ```
 
     clear the cart;
 
-    retrieve current cart contents;
+    ```
+    view_cart( customer_id:int)
+    ```
+
+    retrieve the active cart for a customer and retrieve current cart contents;
+
+    ```
+    total_cart_price( customer_id:int)
+    ```
 
     retrieve authoritative subtotal and total values calculated by the backend. 
-      
-    """
-    
 
-    @router.post("/cart/add/{customer_id}/{restaurant_id}/{item_id}/{quantity}", status_code=status.HTTP_201_CREATED, response_model=list[ItemInCartCreate])
+
+    """
+
+
+    @router.post("/cart/add/{customer_id}/{restaurant_id}/{item_id}/{quantity}", status_code=status.HTTP_201_CREATED)
     def add_item( customer_id:int, restaurant_id:int, item_id:int, quantity:int=1):
         try:
-            # customer = customer_service.get_customer_by_id(customer_id) # assume customer service exists and has a method to get customer by ID
+            #  # assume customer service exists and has a method to get customer by ID
             
-            
+            customer = customer_service.get_customer_by_id(customer_id)
+            # item_avalibility = menu_item_service.menu_service_get_by_id(restaurant_id, item_id)
             added_item = service.cart_add_item_to_cart_service(customer_id, restaurant_id, item_id, quantity)
-        except Exception as e:
+        except CustomerNotFoundError as e:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Customer with ID {customer_id} not found.",
             )
+        except MenuItemNotFoundError as e:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Item with ID {item_id} not found.",
+            )
+
         # return {"message": f"Added {quantity} of item {item_id} to cart for user {customer_id}"}
         return added_item
     
@@ -58,7 +99,7 @@ class shopping_cart_route:
                 edited_item = service.cart_remove_item_from_cart_service(customer_id, item_id)
             else:
                 edited_item = service.cart_edit_item_to_cart_service(customer_id,item_id, quantity)
-        except Exception as e:
+        except CustomerNotFoundError as e:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Customer with ID {customer_id} not found.",
@@ -77,10 +118,10 @@ class shopping_cart_route:
             # customer = customer_service.get_customer_by_id(customer_id) # assume customer service exists and has a method to get customer by ID
             
             removed_item = service.cart_remove_item_from_cart_service(customer_id, item_id)
-        except Exception as e:
+        except CustomerNotFoundError as e:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Menu item with ID {item_id} not found.",
+                detail=f"Customer with ID {customer_id} not found.",
             )
         return {"message": f"Removed item {item_id} from cart for user {customer_id}"}
 
@@ -89,7 +130,7 @@ class shopping_cart_route:
         try:
             # customer = customer_service.get_customer_by_id(customer_id) # assume customer service exists and has a method to get customer by ID
             cleared_cart = service.cart_empty_items_service(customer_id)
-        except Exception as e:
+        except CustomerNotFoundError as e:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Customer with ID {customer_id} not found.",
@@ -102,7 +143,7 @@ class shopping_cart_route:
         try:
             # customer = app.services.customer_service.get_customer_by_id(customer_id)  # assume customer service exists and has a method to get customer by ID
             cart_items = service.cart_view_by_customer_service(customer_id)
-        except Exception as e:
+        except CustomerNotFoundError as e:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Customer with ID {customer_id} not found.",
@@ -117,8 +158,9 @@ class shopping_cart_route:
     @router.get("/cart/{customer_id}/calculate_total", status_code=status.HTTP_200_OK)
     def total_cart_price( customer_id:int) -> dict:
         try:
+            # customer = app.services.customer_service.get_customer_by_id(customer_id)  # assume customer service exists and has a method to get customer by ID
             total_price = service.total_cart_price_service(customer_id)
-        except Exception as e:
+        except CustomerNotFoundError as e:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Customer with ID {customer_id} not found.",
