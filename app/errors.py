@@ -23,3 +23,9 @@ class CartItemNotFoundError(Exception):
 
 class CustomerNotFoundError(Exception):
     pass
+
+class CartNotFoundError(Exception):
+    pass
+
+class CartRestaurantMismatchError(Exception):
+    pass
