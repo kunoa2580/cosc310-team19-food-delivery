@@ -4,44 +4,44 @@ import os
 
 class ShoppingCartRepository:
     """
-        ```
-        _get_data_path(self) -> str
+```
+_get_data_path(self) -> str
 
-        ```
-        return data_path string
-        ```
-        _load(self) -> list[dict]
-        ```
-        data [shopping cart with customer_id, cart_id, items:[{...}, {...}]] return as list[dict]
-        load data helper called from service with given customer_id
+```
+return data_path string
+```
+_load(self) -> list[dict]
+```
+data [shopping cart with customer_id, cart_id, items:[{...}, {...}]] return as list[dict]
+load data helper called from service with given customer_id
 
-        ```
-        _save(self, records: list[dict]) -> None
-        ```
-        to save updated/edited/deleted/added data give with data have been edited/deleted/updated opetions
+```
+_save(self, records: list[dict]) -> None
+```
+to save updated/edited/deleted/added data give with data have been edited/deleted/updated opetions
 
-        ```
-        cart_add_customer(self,customer_id:int) -> bool:
-        ```
-            get customer cart, if they do not have one create one for them with empty cart
+```
+cart_add_customer(self,customer_id:int) -> bool:
+```
 
-            return ```bool``` False or True
+get customer cart, if they do not have one create one for them with empty cart
 
-        ```
-        cart_add_item_to_cart_repo(self, customer_id: int, item: dict) -> dict | None
+return ```bool``` False or True
+            
 
-        ```
+```
+cart_add_item_to_cart_repo(self, customer_id: int, item: dict) -> dict | None
+```
+To add new item to associate customer cart
 
-            add new item to associate customer cart
+return new list of cart or None
 
-            return new list of cart or None
+```
+cart_edit_item_repo(self, customer_id:int, item_id: int, quantity: int) -> dict | None:
+```
 
-    ```
-    cart_edit_item_repo(self, customer_id:int, item_id: int, quantity: int) -> dict | None:
-    ```
-
-    cart_edit_item_repo can edit exits items that is already inside a customer cart
-    user will only be able to edit quatity and return new ```dict`` in the cart
+cart_edit_item_repo can edit exits items that is already inside a customer cart
+user will only be able to edit quatity and return new ```dict`` in the cart
 
 ```
 cart_empty_items_repo(self, customer_id: int) -> dict | None:
@@ -140,8 +140,9 @@ To view all selected items in customer's cart
 
         """
         all_carts = self._load()
+        
         for cart in all_carts:
-            if cart["customer_id"] == customer_id:
+            if cart["customer_id"] == customer_id and not cart.get("checkout_status", False):
                 return False
         new_cart = {"cart_id": len(all_carts) + 1, "customer_id": customer_id, "items": [], "checkout_status": False}
         all_carts.append(new_cart)
@@ -157,7 +158,7 @@ To view all selected items in customer's cart
         """
         all_carts = self._load()
         for cart in all_carts:
-            if cart["customer_id"] == customer_id:
+            if cart["customer_id"] == customer_id and not cart.get("checkout_status", False):
                 existing = None
                 for line in cart["items"]:
                     if line["item_id"] == item["item_id"]:
@@ -180,7 +181,7 @@ To view all selected items in customer's cart
         """
         all_carts = self._load()
         for cart in all_carts:
-            if cart["customer_id"] == customer_id:
+            if cart["customer_id"] == customer_id and not cart.get("checkout_status", False):
                 for cart_item in cart["items"]:
                     if cart_item["item_id"] == item_id:
                         if quantity <= 0:
@@ -194,7 +195,7 @@ To view all selected items in customer's cart
     def cart_empty_items_repo(self, customer_id: int) -> dict| None:
         all_carts = self._load()
         for cart in all_carts:
-            if cart["customer_id"] == customer_id:
+            if cart["customer_id"] == customer_id and not cart.get("checkout_status", False):
                 cart["items"] = []
                 self._save(all_carts)
                 return cart
@@ -203,6 +204,15 @@ To view all selected items in customer's cart
     def cart_view_by_customer_repo(self, customer_id: int) -> dict | None:
         all_carts = self._load()
         for cart in all_carts:
-            if cart["customer_id"] == customer_id:
+            if cart["customer_id"] == customer_id and not cart.get("checkout_status", False):
+                return cart
+        return None
+
+    def cart_close_repo(self, customer_id: int) -> dict | None:
+        all_carts = self._load()
+        for cart in all_carts:
+            if cart["customer_id"] == customer_id and cart["checkout_status"] is False:
+                cart["checkout_status"] = True
+                self._save(all_carts)
                 return cart
         return None
