@@ -33,4 +33,16 @@ class CartRestaurantMismatchError(Exception):
     pass
 
 class CustomerDeactivatedError(Exception):
+    pass 
+  
+class EmptyCartError(Exception):
+    pass
+
+class InvalidCartError(Exception):
+    pass
+
+class CheckoutCustomerInactiveError(Exception):
+    pass
+
+class OrderNotFoundError(Exception):
     pass
