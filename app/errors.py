@@ -29,3 +29,15 @@ class CheckoutCustomerInactiveError(Exception):
 
 class OrderNotFoundError(Exception):
     pass
+
+class CartItemNotFoundError(Exception):
+    pass
+
+class CustomerNotFoundError(Exception):
+    pass
+
+class CartNotFoundError(Exception):
+    pass
+
+class CartRestaurantMismatchError(Exception):
+    pass
