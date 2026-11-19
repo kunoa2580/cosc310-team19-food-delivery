@@ -61,7 +61,7 @@ class ItemInCartCreate(BaseModel):
     restaurant_id: int
     name: str
     price: float
-    availability: bool = Field(True)
+    availability: bool = Field(default=True)
     quantity: int = Field(gt=0, description="Quantity must be greater than 0")
 
 class ItemInCartUpdate(BaseModel):
@@ -86,5 +86,7 @@ class ShoppingCartRead(BaseModel):
     customer_id: int
     checkout_status: bool
     items: list[ItemInCartRead] = []
+    subtotal: float = 0.0
+    total: float = 0.0
 
 

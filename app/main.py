@@ -8,7 +8,7 @@ from app.api.routes import restaurant_route, menu_item_route,shopping_cart_route
 
 app = FastAPI(
     title="COSC 310 Team 19 Food Delivery",
-    version="M1",
+    version="M2",
 )
 
 app.include_router(restaurant_route.router)
