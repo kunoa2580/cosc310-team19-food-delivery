@@ -5,7 +5,7 @@
     "name": "Iced Peach Green Tea Lemonade",
     "description": "A refreshing blend of green tea, fresh peach syrup, and lemonade.",
     "price": 0.00,
-    "availability": false
+    "availability": true
   },
   {
     "item_id": 2,
