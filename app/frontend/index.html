@@ -10,8 +10,13 @@
 <body>
   <header class="topbar">
     <div><strong>Food Delivery</strong><span class="subtitle">COSC 310 · Team 19</span></div>
-    <div class="header-actions"><span id="role-label"></span><button id="logout" class="secondary" hidden>Change role</button></div>
+    <div class="header-actions">
+  <span id="role-label"></span>
+  <button id="open-cart" class="secondary" hidden>Cart</button>
+  <button id="logout" class="secondary" hidden>Change role</button>
+</div>
   </header>
+  
   <main>
     <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
 
@@ -77,7 +82,16 @@
       <h2>Menu</h2><p class="muted">Browse current items and availability.</p>
       <div id="customer-menu" class="cards"></div>
     </section>
-
+<section id="cart-view" class="view" hidden>
+  <button id="back-from-cart" class="secondary">← Keep shopping</button>
+  <p class="eyebrow">YOUR CART</p><h1>Review your order.</h1>
+  <div id="cart-list" class="cards"></div>
+  <p id="cart-total" class="price"></p>
+  <div class="button-row">
+    <button id="clear-cart" class="danger">Clear cart</button>
+    <button id="checkout">Checkout</button>
+  </div>
+</section>
     <section id="manage-view" class="view" hidden>
       <p class="eyebrow">RESTAURANT WORKSPACE</p><h1>Manage your restaurant.</h1>
       <div class="toolbar">

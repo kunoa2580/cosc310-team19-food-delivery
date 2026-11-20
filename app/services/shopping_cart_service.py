@@ -1,31 +1,16 @@
 from typing import Protocol
 
 
-from app.schemas.shopping_cart import ShoppingCartCreate, ShoppingCartUpdate, ShoppingCartRead, ItemInCartCreate, ItemInCartUpdate, ItemInCartRead
-from app.schemas.menu_item import MenuItemRead
+from app.schemas.shopping_cart import ShoppingCartRead, ItemInCartCreate
+
 from app.services.menu_item_service import menu_service_get_by_id
-from app.errors import (MenuItemNotFoundError, 
-                        DuplicateMenuItemError, 
-                        InvalidMenuItemUpdateError, 
-                        MenuItemRestaurantNotFoundError, 
-                        CustomerNotFoundError, 
-                        CustomerDeactivatedError,
+from app.services.account_service import require_active_customer
+from app.errors import (
                         CartItemNotFoundError,
                         CartNotFoundError,
                         CartRestaurantMismatchError,
                         MenuItemIsNotAvailableError)
-# from errors import CartItemNotFoundError
-# Fake customer service
-DEACTIVATED_CUSTOMERS = {50}
 
-class customer_service:
-    @staticmethod
-    def get_customer_by_id(customer_id: int) -> int:
-        if customer_id > 123:
-            raise CustomerNotFoundError(f"Customer {customer_id} is not found")
-        if customer_id in DEACTIVATED_CUSTOMERS:
-            raise CustomerDeactivatedError(f"Customer {customer_id} is deactivated")
-        return customer_id
 
 class CartStore(Protocol):
     def cart_view_by_customer_repo(self, customer_id: int) -> dict | None: ...
@@ -34,7 +19,7 @@ class CartStore(Protocol):
     def cart_empty_items_repo(self, customer_id: int) -> dict | None: ...
     def cart_add_customer(self, customer_id: int) -> bool: ...
     def cart_close_repo(self, customer_id: int) -> dict | None:...
-
+""" Desgin approach  """
 
 class shopping_cart_service():
     DELIVERY_FEE = 0
@@ -48,8 +33,7 @@ class shopping_cart_service():
     def cart_add_item_to_cart_service(self, customer_id:int, restaurant_id:int, item_id:int, quantity:int) -> ShoppingCartRead:
         
         repository = self.repository
-        customer = customer_service.get_customer_by_id(customer_id) #if customer activate == false raise CustomerNotFoundError(f"Customer {customer_id} is not found")
-        # this is just for convinience implementing a fake customer
+        customer = require_active_customer(customer_id)
         
         cart = repository.cart_view_by_customer_repo(customer_id)
         if cart is None:
@@ -82,7 +66,7 @@ class shopping_cart_service():
 
     def cart_edit_item_to_cart_service(self, customer_id: int, item_id: int, quantity: int) -> ShoppingCartRead:
         repository = self.repository
-        customer_service.get_customer_by_id(customer_id)
+        require_active_customer(customer_id)
 
         cart = repository.cart_edit_item_repo(customer_id, item_id, quantity)
         if cart is None:
@@ -93,7 +77,7 @@ class shopping_cart_service():
 
     def cart_remove_item_from_cart_service(self, customer_id: int, item_id: int) -> ShoppingCartRead:
         repository = self.repository
-        customer = customer_service.get_customer_by_id(customer_id)
+        customer = require_active_customer(customer_id)
         cart = repository.cart_edit_item_repo(customer_id, item_id, 0)
         if cart is None:
             raise CartItemNotFoundError(
@@ -103,7 +87,7 @@ class shopping_cart_service():
 
     def cart_empty_items_service(self, customer_id: int) -> ShoppingCartRead:
         repository = self.repository
-        customer = customer_service.get_customer_by_id(customer_id)
+        customer = require_active_customer(customer_id)
         cart = repository.cart_empty_items_repo(customer_id)
 
         if cart is None:
@@ -112,12 +96,10 @@ class shopping_cart_service():
 
     def cart_view_by_customer_service(self, customer_id: int) -> ShoppingCartRead:
         repository = self.repository
-        customer_service.get_customer_by_id(customer_id)
+        require_active_customer(customer_id)
 
         cart = repository.cart_view_by_customer_repo(customer_id)
         if cart is None:
-            # repository.cart_add_customer(customer_id)
-            # cart = repository.cart_view_by_customer_repo(customer_id)
             raise CartNotFoundError(f"No cart for customer {customer_id}")
         return self._to_read(cart)
 
@@ -131,15 +113,13 @@ class shopping_cart_service():
     
     
     def total_cart_price_service(self, customer_id: int) -> float:
-        customer = customer_service.get_customer_by_id(customer_id)
+        require_active_customer(customer_id)
         cart = self.cart_view_by_customer_service(customer_id)
-        if cart is None:
-            raise CustomerNotFoundError(f"Customer {customer_id} is not found")
         return cart.total
     
     # checkout service call for 
     def cart_close_service(self, customer_id: int) -> ShoppingCartRead:
-        customer_service.get_customer_by_id(customer_id)
+        require_active_customer(customer_id)
         cart = self.repository.cart_close_repo(customer_id)
         if cart is None:
             raise CartNotFoundError(f"No active cart for customer {customer_id}")

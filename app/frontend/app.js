@@ -8,6 +8,8 @@ let editingMenuItem = null;
 let busy = false;
 let account = null;
 let sessionToken = "";
+let cart = null;
+let viewedRestaurantId = null;
 
 function element(id) {
     return document.getElementById(id);
@@ -142,6 +144,7 @@ function renderRestaurants() {
 
 async function openDetails(id) {
     // Fetch current details and menu rather than relying on the list's cached data.
+    viewedRestaurantId = id;
     const restaurant = await api("/restaurants/" + id);
     const items = await api("/restaurant/" + id + "/menu-items");
     const details = element("restaurant-details");
@@ -171,6 +174,9 @@ function renderMenu(containerId, items, management) {
             actions.append(actionButton("Edit", function () { editMenuItem(item); }, "secondary"),
                 actionButton("Delete", function () { return deleteMenuItem(item); }, "danger"));
             card.appendChild(actions);
+        }
+         else if (account && account.role === "customer" && item.availability) {
+            card.appendChild(actionButton("Add to cart", function () { return addToCart(item); }));
         }
         container.appendChild(card);
     });
@@ -343,6 +349,10 @@ bindClick("refresh-manager", async function () {
 });
 bindClick("new-menu-item", function () { resetMenuForm(); element("menu-form").scrollIntoView({ behavior: "smooth" }); });
 bindClick("cancel-menu-edit", resetMenuForm);
+bindClick("open-cart", async function () { await loadCart(); showView("cart-view"); });
+bindClick("back-from-cart", async function () { await loadRestaurants(); showView("browse-view"); });
+bindClick("clear-cart", clearCart);
+bindClick("checkout", checkout);
 element("search").addEventListener("input", renderRestaurants);
 element("cuisine").addEventListener("change", renderRestaurants);
 element("availability").addEventListener("change", renderRestaurants);
@@ -356,6 +366,7 @@ showView("login-view");
 function displayAccount(value) {
     account = value;
     element("account-login").hidden = !!account;
+        element("open-cart").hidden = !(account && account.role === "customer");
     element("registration-panel").hidden = !!account;
     element("signed-in").hidden = !account;
     element("restaurant-login").hidden = false;
@@ -409,6 +420,7 @@ async function clearAccount() {
     displayAccount(null);
     sessionToken = "";
     role = null;
+        cart = null;
     showView("login-view");
 }
 bindClick("sign-out", async function () {
@@ -423,3 +435,75 @@ bindClick("deactivate-account", async function () {
 });
 // Keep the token in memory: reloading the page requires signing in again.
 displayAccount(null);
+
+
+async function loadCart() {
+    try {
+        cart = await api("/cart/view/");
+    } catch (error) {
+        cart = null;                 // 404 just means no active cart yet
+    }
+    renderCart();
+}
+
+function renderCart() {
+    const container = element("cart-list");
+    container.replaceChildren();
+    const lines = cart ? cart.items : [];
+    if (lines.length === 0) {
+        emptyMessage(container, "Your cart is empty.");
+        element("cart-total").textContent = "";
+        return;
+    }
+    lines.forEach(function (line) {
+        const card = textNode("article", "", "card");
+        card.append(
+            textNode("h3", line.name),
+            textNode("p", "$" + line.price.toFixed(2) + " CAD each", "muted"),
+            textNode("p", "Quantity: " + line.quantity)
+        );
+        const actions = textNode("div", "", "button-row");
+        actions.append(
+            actionButton("-", function () { return changeQuantity(line, line.quantity - 1); }, "secondary"),
+            actionButton("+", function () { return changeQuantity(line, line.quantity + 1); }, "secondary"),
+            actionButton("Remove", function () { return removeFromCart(line); }, "danger")
+        );
+        card.appendChild(actions);
+        container.appendChild(card);
+    });
+    element("cart-total").textContent =
+        "Subtotal $" + cart.subtotal.toFixed(2) + " · Total $" + cart.total.toFixed(2) + " CAD";
+}
+
+async function addToCart(item) {
+    const restaurantId = item.restaurant_id || viewedRestaurantId;
+    cart = await api("/cart/add/" + restaurantId + "/" + item.item_id + "/1", "POST");
+    showNotice(item.name + " added to your cart.");
+}
+
+async function changeQuantity(line, quantity) {
+    if (quantity < 1) return removeFromCart(line);   // PATCH rejects 0 with 422
+    cart = await api("/cart/edit/" + line.item_id + "/" + quantity, "PATCH");
+    renderCart();
+}
+
+async function removeFromCart(line) {
+    cart = await api("/cart/remove/" + line.item_id, "DELETE");
+    renderCart();
+    showNotice("Item removed.");
+}
+
+async function clearCart() {
+    if (!window.confirm("Remove every item from your cart?")) return;
+    cart = await api("/cart/clear/", "DELETE");
+    renderCart();
+    showNotice("Cart cleared.");
+}
+
+async function checkout() {
+    if (!cart || cart.items.length === 0) throw new Error("Your cart is empty.");
+    await api("/checkout", "POST");          // confirm the real path with the checkout owner
+    cart = null;
+    renderCart();
+    showNotice("Order placed.");
+}
