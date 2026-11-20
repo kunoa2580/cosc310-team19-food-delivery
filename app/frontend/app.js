@@ -502,7 +502,7 @@ async function clearCart() {
 
 async function checkout() {
     if (!cart || cart.items.length === 0) throw new Error("Your cart is empty.");
-    await api("/checkout", "POST");          // confirm the real path with the checkout owner
+    await api("/customers/" + account.id + "/checkout", "POST");
     cart = null;
     renderCart();
     showNotice("Order placed.");

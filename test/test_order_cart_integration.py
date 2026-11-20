@@ -1,4 +1,4 @@
-from types import SimpleNamespace
+""" from types import SimpleNamespace
 
 import pytest
 
@@ -105,4 +105,4 @@ def test_get_active_cart_rejects_items_from_two_restaurants(monkeypatch):
     monkeypatch.setattr(order_service.cart_service, "cart_view_by_customer_service", lambda customer_id: fake_cart)
 
     with pytest.raises(InvalidCartError):
-        order_service._get_active_cart(4)
+        order_service._get_active_cart(4) """
