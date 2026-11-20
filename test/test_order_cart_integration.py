@@ -1,8 +1,9 @@
-""" from types import SimpleNamespace
+from types import SimpleNamespace
 
 import pytest
 
 from app.errors import InvalidCartError
+from app.repositories.shopping_cart_repository import ShoppingCartRepository
 from app.schemas.menu_item import MenuItemUpdate
 from app.services import order_service
 from app.services.account_service import update_customer
@@ -32,7 +33,7 @@ def register_customer(client, email="alice@example.com"):
 # The shopping cart is cleared, and the order can be retrieved.
 def test_checkout_with_real_cart_creates_order_and_clears_cart(client):
     customer_id = register_customer(client)
-    assert client.post(f"/cart/add/{customer_id}/1/2/2").status_code == 201
+    assert client.post("/cart/add/1/2/2").status_code == 201
 
     response = client.post(f"/customers/{customer_id}/checkout")
     assert response.status_code == 201
@@ -44,7 +45,7 @@ def test_checkout_with_real_cart_creates_order_and_clears_cart(client):
         {"item_id": 2, "name": "Iced Peach Black Tea Lemonade", "unit_price": 4.99, "quantity": 2}
     ]
 
-    assert client.get(f"/cart/view/{customer_id}").json()["items"] == []
+    assert client.get("/cart/view/").json()["items"] == []
 
     assert client.get(f"/orders/{order['order_id']}").json() == order
 
@@ -52,8 +53,8 @@ def test_checkout_with_real_cart_creates_order_and_clears_cart(client):
 # Add an item to the cart → Change the menu price → Place order → Confirm the order uses the current menu price, not the old price stored in the cart.
 def test_checkout_uses_current_menu_price_not_the_price_stored_in_cart(client):
     customer_id = register_customer(client)
-    client.post(f"/cart/add/{customer_id}/1/2/2")
-    assert client.get(f"/cart/view/{customer_id}").json()["items"][0]["price"] == 4.99
+    client.post("/cart/add/1/2/2")
+    assert client.get("/cart/view/").json()["items"][0]["price"] == 4.99
 
     menu_service_update(1, 2, MenuItemUpdate(price=6.0))
 
@@ -76,13 +77,13 @@ def test_checkout_without_an_active_cart_is_rejected(client):
 # Confirm it is rejected with 403, no order is created, and the cart is unchanged.
 def test_checkout_by_a_deactivated_customer_is_rejected(client):
     customer_id = register_customer(client)
-    client.post(f"/cart/add/{customer_id}/1/2/2")
+    client.post("/cart/add/1/2/2")
     update_customer(customer_id, {"is_active": False})
 
     response = client.post(f"/customers/{customer_id}/checkout")
     assert response.status_code == 403
     assert order_service.order_service_get_by_customer(customer_id) == []
-    assert len(client.get(f"/cart/view/{customer_id}").json()["items"]) == 1
+    assert len(ShoppingCartRepository().cart_view_by_customer_repo(customer_id)["items"]) == 1
 
 
 # Check an active, a deactivated and an unknown account → Confirm only the active one counts as an active customer.
@@ -105,4 +106,4 @@ def test_get_active_cart_rejects_items_from_two_restaurants(monkeypatch):
     monkeypatch.setattr(order_service.cart_service, "cart_view_by_customer_service", lambda customer_id: fake_cart)
 
     with pytest.raises(InvalidCartError):
-        order_service._get_active_cart(4) """
+        order_service._get_active_cart(4)
