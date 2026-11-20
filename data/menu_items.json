@@ -4,7 +4,7 @@
     "restaurant_id": 1,
     "name": "Iced Peach Green Tea Lemonade",
     "description": "A refreshing blend of green tea, fresh peach syrup, and lemonade.",
-    "price": 0.0,
+    "price": 0.00,
     "availability": true
   },
   {

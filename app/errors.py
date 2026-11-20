@@ -8,6 +8,8 @@ class RestaurantNotFoundError(Exception):
 class MenuItemNotFoundError(Exception):
     pass
 
+class MenuItemIsNotAvailableError(Exception):
+    pass
 
 class DuplicateMenuItemError(Exception):
     pass
@@ -18,6 +20,21 @@ class MenuItemRestaurantNotFoundError(Exception):
 class InvalidMenuItemUpdateError(Exception):
     pass
 
+class CartItemNotFoundError(Exception):
+    pass
+
+class CustomerNotFoundError(Exception):
+    pass
+
+class CartNotFoundError(Exception):
+    pass
+
+class CartRestaurantMismatchError(Exception):
+    pass
+
+class CustomerDeactivatedError(Exception):
+    pass 
+  
 class EmptyCartError(Exception):
     pass
 
