@@ -6,6 +6,8 @@ let selectedRestaurant = null;
 let menuItems = [];
 let editingMenuItem = null;
 let busy = false;
+let account = null;
+let sessionToken = "";
 
 function element(id) {
     return document.getElementById(id);
@@ -28,9 +30,10 @@ function showView(id) {
 
 // Handles FastAPI string errors, Pydantic's error list, and empty DELETE responses.
 async function api(path, method = "GET", body = null) {
-    const options = { method: method };
+    const options = { method: method, headers: {} };
+    if (sessionToken) options.headers["Authorization"] = "Bearer " + sessionToken;
     if (body !== null) {
-        options.headers = { "Content-Type": "application/json" };
+        options.headers["Content-Type"] = "application/json";
         options.body = JSON.stringify(body);
     }
     const response = await fetch(path, options);
@@ -349,3 +352,74 @@ element("managed-restaurant").addEventListener("change", function () {
 element("restaurant-form").addEventListener("submit", function (event) { event.preventDefault(); run(saveRestaurant); });
 element("menu-form").addEventListener("submit", function (event) { event.preventDefault(); run(saveMenuItem); });
 showView("login-view");
+
+function displayAccount(value) {
+    account = value;
+    element("account-login").hidden = !!account;
+    element("registration-panel").hidden = !!account;
+    element("signed-in").hidden = !account;
+    element("restaurant-login").hidden = false;
+    const isCustomer = account && account.role === "customer";
+    element("profile-form").hidden = !isCustomer;
+    element("address-form").hidden = !isCustomer;
+    element("deactivate-account").hidden = !isCustomer;
+    if (account) {
+        element("account-summary").textContent = account.name + " (" + account.role + ") — " + account.email;
+        element("profile-form").elements.name.value = account.name;
+        element("address-form").elements.delivery_address.value = account.delivery_address || "";
+    }
+}
+
+element("account-register").addEventListener("submit", function (event) {
+    event.preventDefault();
+    run(async function () {
+        await api("/customers", "POST", Object.fromEntries(new FormData(event.target)));
+        event.target.reset();
+        showNotice("Account created. Sign in above.");
+    });
+});
+
+element("account-login").addEventListener("submit", function (event) {
+    event.preventDefault();
+    run(async function () {
+        const result = await api("/auth/login", "POST", Object.fromEntries(new FormData(event.target)));
+        sessionToken = result.access_token;
+        displayAccount(result.account);
+        event.target.reset();
+        await enterRole(account.role === "restaurant" ? "restaurant" : "customer");
+    });
+});
+
+element("profile-form").addEventListener("submit", function (event) {
+    event.preventDefault();
+    run(async function () {
+        displayAccount(await api("/customers/me", "PATCH", Object.fromEntries(new FormData(event.target))));
+        showNotice("Name saved.");
+    });
+});
+element("address-form").addEventListener("submit", function (event) {
+    event.preventDefault();
+    run(async function () {
+        displayAccount(await api("/customers/me/address", "PUT", Object.fromEntries(new FormData(event.target))));
+        showNotice("Delivery address saved.");
+    });
+});
+
+async function clearAccount() {
+    displayAccount(null);
+    sessionToken = "";
+    role = null;
+    showView("login-view");
+}
+bindClick("sign-out", async function () {
+    await api("/auth/logout", "POST");
+    await clearAccount();
+});
+bindClick("deactivate-account", async function () {
+    if (!window.confirm("Deactivate your account? You will no longer be able to sign in.")) return;
+    await api("/customers/me", "DELETE");
+    await clearAccount();
+    showNotice("Account deactivated.");
+});
+// Keep the token in memory: reloading the page requires signing in again.
+displayAccount(null);

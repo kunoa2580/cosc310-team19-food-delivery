@@ -27,3 +27,7 @@ htmlcov/
 Thumbs.db
 
 # .github/ISSUE_TEMPLATE/
+
+# Local account credentials; provision demo accounts rather than committing them.
+data/accounts.json
+data/accounts.tmp
