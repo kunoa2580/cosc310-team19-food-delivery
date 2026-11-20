@@ -5,6 +5,7 @@ from app.repositories.shopping_cart_repository import ShoppingCartRepository
 from app.schemas.order import CheckoutCart, CheckoutCartItem, OrderItemRead, OrderRead
 from app.services.menu_item_service import menu_service_get_by_id
 from app.services.restaurant_service import restaurant_service_get_by_id
+from app.services.account_service import AccountNotFound, Forbidden, require_active_customer
 from app.services.shopping_cart_service import shopping_cart_service
 from app.errors import (
     CartNotFoundError,
@@ -23,7 +24,12 @@ cart_service = shopping_cart_service(ShoppingCartRepository())
 
 
 def _customer_is_active(customer_id: int) -> bool:
-    raise NotImplementedError("Customer service is not merged yet")
+    """Return True only if the account exists, is a customer, and is active."""
+    try:
+        require_active_customer(customer_id)
+    except (AccountNotFound, Forbidden):
+        return False
+    return True
 
 
 def _get_active_cart(customer_id: int) -> CheckoutCart:
