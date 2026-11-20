@@ -1,5 +1,22 @@
 # Provenance
 
+## M2 accounts: AI-generated implementation, tests and documentation
+
+Scope revision: public registration now has a Customer-only role selector,
+validated by the backend. At the user's explicit request, restaurant authorization
+and creator assignment were removed and M1 restaurant/menu behavior restored.
+Customer-state/ownership helpers remain for cart/checkout integration; team-wide
+authorization and the full workflow are not claimed complete.
+
+ChatGPT/Codex generated the account schemas, repository, services, HTTP routes,
+authorization dependencies, provisioning utility, frontend account forms,
+tests and M2 documentation on feature/79-customer-auth for epic #79.
+It also drafted child issues. The user selected simple opaque bearer sessions;
+cookie/CSRF work was removed. Local pytest was used for validation.
+Student understanding, teammate review and merged CI are pending; this entry
+does not claim they occurred. Apply instructor-provided milestone provenance
+labels at submission if a prescribed vocabulary is supplied.
+
 This document records the use of generative AI assistance in accordance with the COSC 310 project requirements.
 
 ## Generative AI Assistance

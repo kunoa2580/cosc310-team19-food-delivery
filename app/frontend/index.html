@@ -15,13 +15,47 @@
   <main>
     <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
 
+    <section class="panel" id="account-panel">
+      <h2>Your account</h2>
+      <form id="account-login">
+        <label>Email <input name="email" type="email" required autocomplete="username"></label>
+        <label>Password <input name="password" type="password" required autocomplete="current-password"></label>
+        <button>Sign in</button>
+      </form>
+      <details id="registration-panel"><summary>Register a customer account</summary>
+        <form id="account-register">
+          <label>Account role
+            <select name="role" required>
+              <option value="customer">Customer</option>
+            </select>
+          </label>
+          <label>Name <input name="name" required maxlength="100"></label>
+          <label>Email <input name="email" type="email" required></label>
+          <label>Password <input name="password" type="password" minlength="8" maxlength="128" required autocomplete="new-password"></label>
+          <button>Register</button>
+        </form>
+      </details>
+      <div id="signed-in" hidden>
+        <p id="account-summary"></p>
+        <form id="profile-form" hidden>
+          <label>Name <input name="name" required maxlength="100"></label>
+          <button>Save name</button>
+        </form>
+        <form id="address-form" hidden>
+          <label>Delivery address <input name="delivery_address" required maxlength="500"></label>
+          <button>Save address</button>
+        </form>
+        <button id="deactivate-account" class="danger" hidden>Deactivate account</button>
+        <button id="sign-out">Sign out</button>
+      </div>
+    </section>
     <section id="login-view" class="view login">
       <p class="eyebrow">WELCOME</p>
-      <h1>Choose your view.</h1>
+      <h1>Browse restaurants.</h1>
       <p class="muted">Browse restaurants or manage your restaurant and menu.</p>
       <div class="role-grid">
         <div class="panel"><h2>Customer</h2><p>Find a restaurant, see its details, and browse the menu.</p><button id="customer-login">Continue as customer</button></div>
-        <div class="panel"><h2>Restaurant</h2><p>Create a restaurant, edit its information, and manage menu items.</p><button id="restaurant-login">Continue as restaurant</button></div>
+        <div class="panel"><h2>Restaurant</h2><p>Create a restaurant, edit its information, and manage menu items.</p><button id="restaurant-login">Manage restaurants</button></div>
       </div>
     </section>
 

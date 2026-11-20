@@ -1,5 +1,14 @@
 # COSC 310 Team 19 Food Delivery
 
+## M2 account feature branch
+
+This branch adds customer accounts and opaque bearer-session authentication.
+Restaurant/menu authorization is deferred to team integration; those endpoints
+retain their M1 behavior and are not protected by this branch.
+See [M2 accounts](docs/M2-ACCOUNTS.md) for setup, API contracts, provisioning,
+tests and outstanding integration. The M1 description below is historical;
+customer registration offers Customer only.
+
 This is our COSC 310 food-delivery project. Milestone 1 covers restaurant discovery, menu browsing, and restaurant/menu management. Orders and deliveries are planned for later milestones.
 
 ## What works right now
