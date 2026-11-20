@@ -1,11 +1,17 @@
 from datetime import datetime, timezone
 
 from app.repositories.order_repository import OrderRepository
-from app.schemas.order import CheckoutCart, OrderItemRead, OrderRead
+from app.repositories.shopping_cart_repository import ShoppingCartRepository
+from app.schemas.order import CheckoutCart, CheckoutCartItem, OrderItemRead, OrderRead
 from app.services.menu_item_service import menu_service_get_by_id
 from app.services.restaurant_service import restaurant_service_get_by_id
+from app.services.account_service import AccountNotFound, Forbidden, require_active_customer
+from app.services.shopping_cart_service import shopping_cart_service
 from app.errors import (
+    CartNotFoundError,
     CheckoutCustomerInactiveError,
+    CustomerDeactivatedError,
+    CustomerNotFoundError,
     EmptyCartError,
     InvalidCartError,
     MenuItemNotFoundError,
@@ -14,17 +20,41 @@ from app.errors import (
 )
 
 order_repo = OrderRepository()
+cart_service = shopping_cart_service(ShoppingCartRepository())
+
 
 def _customer_is_active(customer_id: int) -> bool:
-    raise NotImplementedError("Customer service is not merged yet")
+    """Return True only if the account exists, is a customer, and is active."""
+    try:
+        require_active_customer(customer_id)
+    except (AccountNotFound, Forbidden):
+        return False
+    return True
 
 
 def _get_active_cart(customer_id: int) -> CheckoutCart:
-    raise NotImplementedError("Cart service is not merged yet")
+    try:
+        cart = cart_service.cart_view_by_customer_service(customer_id)
+    except (CustomerNotFoundError, CustomerDeactivatedError):
+        raise CheckoutCustomerInactiveError(f"Customer {customer_id} is not active")
+    except CartNotFoundError:
+        raise EmptyCartError("Cannot check out an empty cart")
+
+    if not cart.items:
+        raise EmptyCartError("Cannot check out an empty cart")
+
+    restaurant_ids = {line.restaurant_id for line in cart.items}
+    if len(restaurant_ids) > 1:
+        raise InvalidCartError("Cart contains items from more than one restaurant")
+
+    return CheckoutCart(
+        restaurant_id=restaurant_ids.pop(),
+        items=[CheckoutCartItem(item_id=line.item_id, quantity=line.quantity) for line in cart.items],
+    )
 
 
 def _clear_cart(customer_id: int) -> None:
-    raise NotImplementedError("Cart service is not merged yet")
+    cart_service.cart_empty_items_service(customer_id)
 
 # US1 Checkout: turn the customer's active cart into a saved order.
 # 1. Validate the customer, cart, restaurant, menu items and quantities (nothing is written yet).

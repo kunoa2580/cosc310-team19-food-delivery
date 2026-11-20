@@ -3,16 +3,7 @@
     "cart_id": 1,
     "customer_id": 1,
     "checkout_status": false,
-    "items": [
-      {
-        "item_id": 2,
-        "restaurant_id": 1,
-        "name": "Iced Peach Black Tea Lemonade",
-        "price": 4.99,
-        "availability": true,
-        "quantity": 3
-      }
-    ]
+    "items": []
   },
   {
     "cart_id": 2,

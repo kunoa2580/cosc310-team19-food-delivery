@@ -2,9 +2,12 @@ from fastapi import APIRouter, HTTPException, status, exceptions,Path
 import app
 import random
 from pydantic import BaseModel, Field, ValidationError
-
+from typing import Protocol
 from app.repositories.shopping_cart_repository import ShoppingCartRepository
 from app.services.shopping_cart_service import shopping_cart_service
+from fastapi import Depends
+from app.api.auth import customer
+from app.schemas.account import AccountRead
 
 service = shopping_cart_service(ShoppingCartRepository())
 
@@ -18,21 +21,26 @@ from app.schemas.shopping_cart import (
     ShoppingCartCreate,
     ShoppingCartRead, 
     ShoppingCartUpdate)
-router = APIRouter()
-
-
 from app.errors import (
     MenuItemNotFoundError, 
     DuplicateMenuItemError, 
     InvalidMenuItemUpdateError, 
     MenuItemRestaurantNotFoundError, 
-    CustomerNotFoundError, 
-    CustomerDeactivatedError,
     CartItemNotFoundError,
     CartNotFoundError,
     CartRestaurantMismatchError, 
     MenuItemIsNotAvailableError
 )
+
+router = APIRouter(tags=["Shopping Cart"], responses={
+    401: {"description": "Missing, invalid, or expired session"},
+    403: {"description": "Inactive account or wrong role"},
+    404: {"description": "Account, cart item, or menu item not found"},
+})
+
+
+
+
 
     
 class shopping_cart_route:
@@ -78,26 +86,19 @@ class shopping_cart_route:
 
     """
     """  
-    args none
+
 
 
     """
-    # def __init__(self):
-    #     self.service = service
-    #     pass
             
-    @router.post("/cart/add/{customer_id}/{restaurant_id}/{item_id}/{quantity}", status_code=status.HTTP_201_CREATED)
-    def add_item(customer_id: int, restaurant_id: int, item_id: int, quantity: int = Path(gt=0)) -> ShoppingCartRead:
+    @router.post("/cart/add/{restaurant_id}/{item_id}/{quantity}", status_code=status.HTTP_201_CREATED, response_model=ShoppingCartRead, summary="Add a menu item to the signed-in customer's cart")
+    def add_item(restaurant_id: int, item_id: int, quantity: int = Path(gt=0), account: AccountRead = Depends(customer)) -> ShoppingCartRead:
         try:
             return service.cart_add_item_to_cart_service(
-                customer_id, restaurant_id, item_id, quantity
-            ) 
+                account.id, restaurant_id, item_id, quantity
+            )
         except CartRestaurantMismatchError as e:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))
-        except CustomerNotFoundError as e:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, detail=str(e))
-        except CustomerDeactivatedError as e:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, detail=str(e))
         except MenuItemNotFoundError as e:
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail=str(e))
         except CartNotFoundError as e:
@@ -109,80 +110,51 @@ class shopping_cart_route:
         except ValidationError as e:
             raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(f"quantity entered equal or blow zero"))
     
-    @router.patch("/cart/edit/{customer_id}/{item_id}/{quantity}",
-                  status_code=status.HTTP_200_OK)
-    def edit_item(customer_id: int, item_id: int, quantity: int = Path(gt=0)) -> ShoppingCartRead:
+    @router.patch("/cart/edit/{item_id}/{quantity}",status_code=status.HTTP_200_OK, response_model=ShoppingCartRead, summary="Change the quantity of an item in the cart")
+    def edit_item(item_id: int, quantity: int = Path(gt=0),account: AccountRead = Depends(customer)) -> ShoppingCartRead:
         try:
-            return service.cart_edit_item_to_cart_service(customer_id, item_id, quantity)
-        except CustomerNotFoundError as e:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, detail=str(e))
-        except CustomerDeactivatedError as e:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, detail=str(e))
+            return service.cart_edit_item_to_cart_service(account.id, item_id, quantity)
         except CartItemNotFoundError as e:
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail=str(e))
         
        
 
-    @router.delete("/cart/remove/{customer_id}/{item_id}", status_code=status.HTTP_200_OK)
-    def remove_item( customer_id:int, item_id:int)  -> ShoppingCartRead:
+    @router.delete("/cart/remove/{item_id}", status_code=status.HTTP_200_OK, response_model=ShoppingCartRead, summary="Remove a single item from the cart")
+    def remove_item( item_id:int,account: AccountRead = Depends(customer))  -> ShoppingCartRead:
         try:
-            # customer = customer_service.get_customer_by_id(customer_id) # assume customer service exists and has a method to get customer by ID
             
-            removed_item = service.cart_remove_item_from_cart_service(customer_id, item_id)
+            
+            removed_item = service.cart_remove_item_from_cart_service(account.id, item_id)
             return removed_item
-        except CustomerNotFoundError as e:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, detail=str(e))
-        except CustomerDeactivatedError as e:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, detail=str(e))
         except CartItemNotFoundError as e:
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail=str(e))
 
-    @router.delete("/cart/clear/{customer_id}", status_code=status.HTTP_200_OK)
-    def clear_cart( customer_id:int)  -> ShoppingCartRead:
+    @router.delete("/cart/clear/", status_code=status.HTTP_200_OK, response_model=ShoppingCartRead, summary="Remove every item from the cart")
+    def clear_cart( account: AccountRead = Depends(customer))  -> ShoppingCartRead:
         try:
-            # customer = customer_service.get_customer_by_id(customer_id) # assume customer service exists and has a method to get customer by ID
-            cleared_cart = service.cart_empty_items_service(customer_id)
+            
+            cleared_cart = service.cart_empty_items_service(account.id)
             return cleared_cart
-        except CustomerNotFoundError as e:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Customer with ID {customer_id} not found.",
-            )
-        except CustomerDeactivatedError as e:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, detail=str(e))
         except CartNotFoundError as e:
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail=str(e))
         
 
-    @router.get("/cart/view/{customer_id}", status_code=status.HTTP_200_OK)
-    def view_cart( customer_id:int)  -> ShoppingCartRead:
+    @router.get("/cart/view/", status_code=status.HTTP_200_OK, response_model=ShoppingCartRead, summary="Retrieve the signed-in customer's active cart")
+    def view_cart(account: AccountRead = Depends(customer))  -> ShoppingCartRead:
         
         try:
-            # customer = app.services.customer_service.get_customer_by_id(customer_id)  # assume customer service exists and has a method to get customer by ID
-            cart_items = service.cart_view_by_customer_service(customer_id)
+           
+            cart_items = service.cart_view_by_customer_service(account.id)
             return cart_items
-        except CustomerNotFoundError as e:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Customer with ID {customer_id} not found.",
-            )
-        except CustomerDeactivatedError as e:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, detail=str(e))
         except CartNotFoundError as e:
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail=str(e))   
 
-    @router.get("/cart/{customer_id}/calculate_total", status_code=status.HTTP_200_OK)
-    def total_cart_price( customer_id:int) -> dict:
+    @router.get("/cart/total", status_code=status.HTTP_200_OK, summary="Retrieve the backend calculated cart total for signed active customer")
+    def total_cart_price( account: AccountRead = Depends(customer)) -> dict:
         try:
-            # customer = app.services.customer_service.get_customer_by_id(customer_id)  # assume customer service exists and has a method to get customer by ID
-            total_price = service.total_cart_price_service(customer_id)
-        except CustomerNotFoundError as e:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Customer with ID {customer_id} not found.",
-            )
-        except CustomerDeactivatedError as e:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, detail=str(e))
+           
+            total_price = service.total_cart_price_service(account.id)
         except CartNotFoundError as e:
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail=str(e))
-        return {"message": f"Total price for cart of user {customer_id}", "total_price": total_price}
+        return {"message": f"Total price for cart of user {account.id}", "total_price": total_price}
+    
