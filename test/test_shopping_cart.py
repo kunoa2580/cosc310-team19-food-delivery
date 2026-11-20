@@ -1,4 +1,4 @@
-""" from xmlrpc import client
+
 
 import pytest
 import random
@@ -74,4 +74,4 @@ def test_edit_item_service_good():
     sC_service.cart_add_item_to_cart_service(1, 1, 1, 1)
     response = sC_service.cart_edit_item_to_cart_service(1, 1, 2)
     assert response.customer_id == 1
-    assert any(line.item_id == 1 and line.quantity == 2 for line in response.items) """
+    assert any(line.item_id == 1 and line.quantity == 2 for line in response.items)
