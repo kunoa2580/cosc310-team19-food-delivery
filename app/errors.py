@@ -20,6 +20,18 @@ class MenuItemRestaurantNotFoundError(Exception):
 class InvalidMenuItemUpdateError(Exception):
     pass
 
+class EmptyCartError(Exception):
+    pass
+
+class InvalidCartError(Exception):
+    pass
+
+class CheckoutCustomerInactiveError(Exception):
+    pass
+
+class OrderNotFoundError(Exception):
+    pass
+
 class CartItemNotFoundError(Exception):
     pass
 
