@@ -38,3 +38,12 @@ def test_env_dir_is_read_on_every_call(tmp_path, monkeypatch):
     first = store.path()
     monkeypatch.setenv("COSC310_DATA_DIR", str(tmp_path / "b"))
     assert store.path() != first
+
+
+
+# Regression: an empty (0-byte) data file used to raise JSONDecodeError,
+# so order history and checkout returned 500. An empty file now means no records.
+def test_load_returns_empty_list_when_file_is_empty(tmp_path):
+    path = tmp_path / "things.json"
+    path.write_text("", encoding="utf-8")
+    assert JsonStore("things.json", data_path=path).load() == []
