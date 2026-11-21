@@ -44,6 +44,9 @@ textarea { resize: vertical; }
 .card { display: flex; flex-direction: column; align-items: flex-start; overflow-wrap: anywhere; }
 .card p { font-size: 14px; }
 .card .button-row, .card > button { margin-top: auto; }
+.restaurant-card { color: inherit; text-align: left; gap: 8px; }
+.restaurant-card strong { font-size: 20px; }
+.restaurant-card:hover { background: #edf3ed; border-color: #296342; }
 .tag { font-size: 12px; padding: 4px 8px; border-radius: 4px; background: #edf3ed; color: #296342; display: inline-block; margin-bottom: 14px; }
 .tag.closed { background: #f5e8e4; color: #995139; }
 .price { font-size: 20px !important; font-weight: 700; }

@@ -7,12 +7,28 @@ from app.services.restaurant_service import (
     restaurant_service_get_by_id,
     restaurant_service_delete,
     restaurant_service_update,
+    require_unique_restaurant_name,
 )
-from app.errors import RestaurantNotFoundError, DuplicateRestaurantError
+from app.errors import ResourceInUseError, RestaurantNotFoundError, DuplicateRestaurantError
 
-from app.schemas.restaurant import RestaurantCreate, RestaurantRead, RestaurantUpdate
+from app.schemas.restaurant import RestaurantCreate, RestaurantRead, RestaurantUpdate, RestaurantPreview
 
 router = APIRouter(prefix="/restaurants")
+
+
+@router.post(
+    "/validate",
+    response_model=RestaurantCreate,
+    summary="Validate a demo restaurant",
+    description="Check submitted fields and names from the demo list without reading or saving restaurant records.",
+    responses={409: {"description": "Another restaurant in the submitted list already uses this name"}},
+)
+def restaurant_route_validate_preview(payload: RestaurantPreview) -> RestaurantCreate:
+    try:
+        require_unique_restaurant_name(payload.restaurant.name, payload.other_names)
+    except DuplicateRestaurantError as error:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
+    return payload.restaurant
 
 @router.get(
     "",
@@ -115,6 +131,7 @@ def restaurant_route_get_by_id(restaurant_id: int) -> RestaurantRead:
         responses={
             401: {"description": "Sign-in required"},
             403: {"description": "Customers cannot edit restaurant or menu information"},
+            409: {"description": "Restaurant is still in use and cannot be deleted"},
         }
         )
 def restaurant_route_delete(restaurant_id: int) -> None:
@@ -126,3 +143,8 @@ def restaurant_route_delete(restaurant_id: int) -> None:
             status_code = status.HTTP_404_NOT_FOUND,
             detail = str(e)
         )
+    except ResourceInUseError as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(error),
+        ) from error

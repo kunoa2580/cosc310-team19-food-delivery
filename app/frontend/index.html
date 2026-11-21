@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Food Delivery · Team 19</title>
-  <link rel="stylesheet" href="./styles.css?v=m2-admin-sign-in">
-  <script src="./app.js?v=m2-admin-sign-in" defer></script>
+  <link rel="stylesheet" href="./styles.css?v=m2-restaurant-demo">
+  <script src="./app.js?v=m2-demo-validation" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -14,12 +14,14 @@
       <button id="guest-sign-in" class="secondary" hidden>Sign in</button>
       <button id="open-cart" class="secondary" hidden>Cart</button>
       <button id="open-account" class="secondary" hidden>Account</button>
+      <button id="exit-management-demo" class="secondary" hidden>Exit demo</button>
       <button id="sign-out" class="secondary" hidden>Sign out</button>
     </div>
   </header>
   
   <main>
     <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+    <p id="management-demo-notice" class="notice" hidden>Demo mode. Changes are temporary and only visible in this tab.</p>
 
     <section id="login-view" class="view login">
       <h1>Sign in</h1>
@@ -31,13 +33,8 @@
         </form>
         <div class="demo-actions">
           <button id="demo-sign-in" class="secondary" type="button">Sign in with demo customer account</button>
-          <button id="demo-admin-sign-in" class="secondary" type="button" aria-controls="demo-admin-login" aria-expanded="false">Sign in with demo admin account</button>
+          <button id="demo-admin-sign-in" class="secondary" type="button">Sign in with demo admin account</button>
         </div>
-        <form id="demo-admin-login" class="account-form" hidden>
-          <label>Demo admin email <input name="email" type="email" value="demo-admin@example.com" autocomplete="username" readonly></label>
-          <label>Admin password <input name="password" type="password" required autocomplete="current-password"></label>
-          <button>Sign in as admin</button>
-        </form>
         <details id="registration-panel"><summary>Register a customer account</summary>
           <form id="account-register" class="account-form">
             <label>Name <input name="name" required maxlength="100" autocomplete="name"></label>
@@ -97,14 +94,19 @@
       </div>
     </section>
     <section id="manage-view" class="view" hidden>
-      <p class="eyebrow">RESTAURANT WORKSPACE</p><h1>Manage your restaurant.</h1>
+      <h1>Restaurant management</h1>
       <div class="toolbar">
-        <label class="grow">Select a restaurant<select id="managed-restaurant"><option value="">Choose a restaurant</option></select></label>
         <button id="refresh-manager" class="secondary">Refresh</button>
         <button id="new-restaurant">+ New restaurant</button>
       </div>
+      <div id="managed-restaurants" class="cards"></div>
+    </section>
+
+    <section id="manage-restaurant-view" class="view" hidden>
+      <button id="back-to-management" class="secondary">← All restaurants</button>
+      <h1 id="restaurant-form-title">Create a restaurant</h1>
       <div class="panel">
-        <h2 id="restaurant-form-title">Create a restaurant</h2>
+        <h2>Restaurant information</h2>
         <form id="restaurant-form" novalidate>
           <div class="form-grid">
             <label>Name<input name="name"></label>

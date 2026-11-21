@@ -216,3 +216,13 @@ To view all selected items in customer's cart
                 self._save(all_carts)
                 return cart
         return None
+
+    def cart_repo_has_reference(
+        self, restaurant_id: int, item_id: int | None = None
+    ) -> bool:
+        return any(
+            line["restaurant_id"] == restaurant_id
+            and (item_id is None or line["item_id"] == item_id)
+            for cart in self._load()
+            for line in cart["items"]
+        )

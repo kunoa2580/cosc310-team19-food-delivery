@@ -46,3 +46,6 @@ class CartRestaurantMismatchError(Exception):
 
 class CustomerDeactivatedError(Exception):
     pass
+
+class ResourceInUseError(Exception):
+    pass
