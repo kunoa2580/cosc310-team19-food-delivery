@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 from types import SimpleNamespace
+import json
+
 
 import pytest
 
@@ -453,3 +455,65 @@ def test_route_rejects_quantity_zero_before_reaching_the_service(stub_customer_c
 
 def test_route_requires_a_session(client):
     assert client.get("/cart/view/").status_code == 401
+
+
+def _first_available_item(data_dir):
+    items = json.loads((data_dir / "menu_items.json").read_text(encoding="utf-8"))
+    for item in items:
+        if item.get("availability"):
+            return item
+    pytest.skip("seed data has no available menu item")
+
+
+def test_customer_registered_singedin_menu_cart_integration(client, data_dir, empty_carts):
+    item = _first_available_item(data_dir)
+
+    registered = client.post("/customers", json={
+        "name": "Integration Tester",
+        "email": "integration@example.com",
+        "password": "Password123",
+        "delivery_address": "UBC",
+    })
+    assert registered.status_code == 201
+
+    signed_in = client.post("/auth/login", json={
+        "email": "integration@example.com",
+        "password": "Password123",
+    })
+    assert signed_in.status_code == 200
+    client.headers["Authorization"] = "Bearer " + signed_in.json()["access_token"]
+
+    added = client.post(f"/cart/add/{item['restaurant_id']}/{item['item_id']}/2")
+    assert added.status_code == 201
+
+    body = added.json()
+    stored = next(l for l in body["items"] if l["item_id"] == item["item_id"])
+    assert stored["name"] == item["name"]
+    assert stored["price"] == item["price"]
+    assert body["total"] == round(item["price"] * 2, 2)
+
+    viewed = client.get("/cart/view/")
+    assert viewed.status_code == 200
+    assert viewed.json()["customer_id"] == registered.json()["id"]
+    assert viewed.json()["total"] == body["total"]
+
+
+
+def test_real_customer_menu_cart_flow_without_mocks(client, tmp_path):
+    # Multi-subsystem test, no mocks: real account + real menu data + real cart repository.
+    (tmp_path / "shopping_cart.json").write_text("[]")
+    client.post("/customers", json={"name": "Bob", "email": "bob@example.com", "password": "correct-password"})
+    token = client.post(
+        "/auth/login", json={"email": "bob@example.com", "password": "correct-password"}
+    ).json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    price = client.get("/restaurant/1/menu-items/2").json()["price"]
+
+    assert client.post("/cart/add/1/2/2", headers=headers).status_code == 201
+    # A second restaurant's item is rejected (one restaurant per cart).
+    assert client.post("/cart/add/2/3/1", headers=headers).status_code == 400
+
+    cart = client.get("/cart/view/", headers=headers).json()
+    assert [(i["item_id"], i["quantity"]) for i in cart["items"]] == [(2, 2)]
+    assert client.get("/cart/total", headers=headers).json()["total_price"] == round(price * 2, 2)
