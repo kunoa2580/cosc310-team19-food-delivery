@@ -4,64 +4,77 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Food Delivery · Team 19</title>
-  <link rel="stylesheet" href="./styles.css">
-  <script src="./app.js?v=backend-validation-1" defer></script>
+  <link rel="stylesheet" href="./styles.css?v=m2-manage-sign-in">
+  <script src="./app.js?v=m2-order-history" defer></script>
 </head>
 <body>
   <header class="topbar">
     <div><strong>Food Delivery</strong><span class="subtitle">COSC 310 · Team 19</span></div>
     <div class="header-actions">
-  <span id="role-label"></span>
-  <button id="open-cart" class="secondary" hidden>Cart</button>
-  <button id="logout" class="secondary" hidden>Change role</button>
-</div>
+      <button id="guest-sign-in" class="secondary" hidden>Sign in</button>
+      <button id="open-management" class="secondary" hidden>Manage restaurants</button>
+      <button id="open-cart" class="secondary" hidden>Cart</button>
+      <button id="open-account" class="secondary" hidden>Account</button>
+      <button id="sign-out" class="secondary" hidden>Sign out</button>
+    </div>
   </header>
   
   <main>
     <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+    <div id="management-sign-in-hint" class="notice management-sign-in" hidden>
+      <span>Sign in as an admin or restaurant user to edit restaurants and menus.</span>
+      <button id="sign-in-to-edit" class="secondary" type="button">Sign in to edit</button>
+    </div>
 
-    <section class="panel" id="account-panel">
-      <h2>Your account</h2>
-      <form id="account-login">
-        <label>Email <input name="email" type="email" required autocomplete="username"></label>
-        <label>Password <input name="password" type="password" required autocomplete="current-password"></label>
-        <button>Sign in</button>
-      </form>
-      <details id="registration-panel"><summary>Register a customer account</summary>
-        <form id="account-register">
-          <label>Account role
-            <select name="role" required>
-              <option value="customer">Customer</option>
-            </select>
-          </label>
-          <label>Name <input name="name" required maxlength="100"></label>
-          <label>Email <input name="email" type="email" required></label>
-          <label>Password <input name="password" type="password" minlength="8" maxlength="128" required autocomplete="new-password"></label>
-          <button>Register</button>
+    <section id="login-view" class="view login">
+      <h1>Sign in</h1>
+      <p class="muted">Use your customer, restaurant, or admin account.</p>
+      <div class="panel">
+        <form id="account-login" class="account-form">
+          <label>User ID <input name="email" type="text" required maxlength="254" autocomplete="username"></label>
+          <label>Password <input name="password" type="password" required autocomplete="current-password"></label>
+          <button>Sign in</button>
         </form>
-      </details>
-      <div id="signed-in" hidden>
+        <div class="demo-actions">
+          <button id="demo-sign-in" class="secondary" type="button">Sign in with demo customer account</button>
+        </div>
+        <details id="registration-panel"><summary>Register a customer account</summary>
+          <form id="account-register" class="account-form">
+            <label>Name <input name="name" required maxlength="100" autocomplete="name"></label>
+            <label>User ID <input name="email" type="text" required maxlength="254" autocomplete="username"></label>
+            <label>Password <input name="password" type="password" minlength="8" maxlength="128" required autocomplete="new-password"></label>
+            <button>Register</button>
+          </form>
+        </details>
+      </div>
+      <div class="button-row home-actions">
+        <button id="browse-guest" class="secondary">Browse restaurants</button>
+        <button id="manage-restaurants" class="secondary">Manage restaurants</button>
+      </div>
+    </section>
+
+    <section id="account-view" class="view" hidden>
+      <button id="back-from-account" class="secondary">← Restaurants</button>
+      <h1>Your account</h1>
+      <button id="open-order-history" class="secondary" type="button">Order history</button>
+      <div class="panel">
         <p id="account-summary"></p>
-        <form id="profile-form" hidden>
+        <form id="profile-form" class="account-form">
           <label>Name <input name="name" required maxlength="100"></label>
           <button>Save name</button>
         </form>
-        <form id="address-form" hidden>
+        <form id="address-form" class="account-form">
           <label>Delivery address <input name="delivery_address" required maxlength="500"></label>
           <button>Save address</button>
         </form>
-        <button id="deactivate-account" class="danger" hidden>Deactivate account</button>
-        <button id="sign-out">Sign out</button>
+        <button id="deactivate-account" class="danger">Deactivate account</button>
       </div>
     </section>
-    <section id="login-view" class="view login">
-      <p class="eyebrow">WELCOME</p>
-      <h1>Browse restaurants.</h1>
-      <p class="muted">Browse restaurants or manage your restaurant and menu.</p>
-      <div class="role-grid">
-        <div class="panel"><h2>Customer</h2><p>Find a restaurant, see its details, and browse the menu.</p><button id="customer-login">Continue as customer</button></div>
-        <div class="panel"><h2>Restaurant</h2><p>Create a restaurant, edit its information, and manage menu items.</p><button id="restaurant-login">Manage restaurants</button></div>
-      </div>
+
+    <section id="order-history-view" class="view" hidden>
+      <button id="back-from-order-history" class="secondary" type="button">← Account</button>
+      <h1>Order history</h1>
+      <div id="order-history-list"></div>
     </section>
 
     <section id="browse-view" class="view" hidden>
@@ -82,27 +95,37 @@
       <h2>Menu</h2><p class="muted">Browse current items and availability.</p>
       <div id="customer-menu" class="cards"></div>
     </section>
-<section id="cart-view" class="view" hidden>
-  <button id="back-from-cart" class="secondary">← Keep shopping</button>
-  <p class="eyebrow">YOUR CART</p><h1>Review your order.</h1>
-  <div id="cart-list" class="cards"></div>
-  <p id="cart-total" class="price"></p>
-  <div class="button-row">
-    <button id="clear-cart" class="danger">Clear cart</button>
-    <button id="checkout">Checkout</button>
-  </div>
-</section>
-    <section id="manage-view" class="view" hidden>
-      <p class="eyebrow">RESTAURANT WORKSPACE</p><h1>Manage your restaurant.</h1>
-      <div class="toolbar">
-        <label class="grow">Select a restaurant<select id="managed-restaurant"><option value="">Choose a restaurant</option></select></label>
-        <button id="refresh-manager" class="secondary">Refresh</button>
-        <button id="new-restaurant">+ New restaurant</button>
+    <section id="cart-view" class="view" hidden>
+      <div class="button-row">
+        <button id="back-from-cart" class="secondary">← Keep shopping</button>
+        <button id="refresh-cart" class="secondary">Refresh cart</button>
       </div>
+      <h1>Your cart</h1>
+      <section id="order-confirmation" class="panel" aria-label="Order confirmation" aria-live="polite" hidden></section>
+      <div id="cart-list" class="cards"></div>
+      <p id="cart-total" class="price"></p>
+      <div id="cart-actions" class="button-row" hidden>
+        <button id="clear-cart" class="danger">Clear cart</button>
+        <button id="checkout">Checkout</button>
+      </div>
+    </section>
+    <section id="manage-view" class="view" hidden>
+      <button id="back-from-management" class="secondary">← Back</button>
+      <h1>Restaurant management</h1>
+      <div class="toolbar">
+        <button id="refresh-manager" class="secondary">Refresh</button>
+        <button id="new-restaurant" hidden>+ New restaurant</button>
+      </div>
+      <div id="managed-restaurants" class="cards"></div>
+    </section>
+
+    <section id="manage-restaurant-view" class="view" hidden>
+      <button id="back-to-management" class="secondary">← All restaurants</button>
+      <h1 id="restaurant-form-title">Create a restaurant</h1>
       <div class="panel">
-        <h2 id="restaurant-form-title">Create a restaurant</h2>
+        <h2>Restaurant information</h2>
         <form id="restaurant-form" novalidate>
-          <div class="form-grid">
+          <fieldset id="restaurant-fields" class="form-grid">
             <label>Name<input name="name"></label>
             <label>Cuisine<input name="cuisine_type"></label>
             <label class="wide">Address<input name="address"></label>
@@ -112,17 +135,17 @@
             <label>Opening hours<input name="opening_hours"></label>
             <label>Rating<input name="rating" type="text" value="0"></label>
             <label class="checkbox"><input name="availability" type="checkbox" checked>Available</label>
-          </div>
-          <div class="button-row">
+          </fieldset>
+          <div id="restaurant-actions" class="button-row" hidden>
             <button id="save-restaurant" type="submit">Create restaurant</button>
             <button id="delete-restaurant" type="button" class="danger" hidden>Delete restaurant</button>
           </div>
         </form>
       </div>
       <div id="menu-workspace" hidden>
-        <div class="section-heading"><div><h2>Menu items</h2></div><button id="new-menu-item">+ New item</button></div>
+        <div class="section-heading"><div><h2>Menu items</h2></div><button id="new-menu-item" hidden>+ New item</button></div>
         <div id="manager-menu" class="cards"></div>
-        <div class="panel">
+        <div id="menu-editor" class="panel" hidden>
           <h2 id="menu-form-title">Add a menu item</h2>
           <form id="menu-form" novalidate>
             <div class="form-grid">

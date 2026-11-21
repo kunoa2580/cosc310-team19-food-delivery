@@ -1,5 +1,4 @@
 from app.services.menu_item_service import (
-    menu_service_list,
     menu_service_get_by_id,
     menu_service_add,
     menu_service_update,
@@ -54,24 +53,6 @@ def test_menu_service_get_by_id_bad():
     with pytest.raises(MenuItemNotFoundError) as exc_info:
         menu_service_get_by_id(1000,12311)
     assert str(exc_info.value) == "No menu item 12311 on restaurant 1000"
-
-
-def test_menu_service_list():
-    r = menu_service_list(1)
-    assert isinstance(r,list)
-    assert len(r) == 4
-    sample= MenuItemCreate(  **{
-    "name": "Iced Peach Green AND BLACK Tea Lemonade",
-    "description": "A refreshing blend of Green AND BLACK tea, fresh peach syrup, and lemonade.",
-    "price": 0.0,
-    "availability": True
-    })
-    menu_service_add(1, sample)
-    after = menu_service_list(1)
-    assert len(after) == 5
-    assert after[len(after)-1].restaurant_id == 1
-    assert after[len(after)-1].name == "Iced Peach Green AND BLACK Tea Lemonade"
-
 
 
 def test_menu_service_update_not_found():

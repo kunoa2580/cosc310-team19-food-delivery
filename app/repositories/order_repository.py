@@ -27,3 +27,15 @@ class OrderRepository:
     # US3 Order history: all orders of one customer, oldest first (empty list if none).
     def order_repo_list_by_customer(self, customer_id: int) -> list[dict]:
         return [o for o in self._store.load() if o["customer_id"] == customer_id]
+
+    def order_repo_has_reference(
+        self, restaurant_id: int, item_id: int | None = None
+    ) -> bool:
+        for order in self._store.load():
+            if order["restaurant_id"] != restaurant_id:
+                continue
+            if item_id is None or any(
+                line["item_id"] == item_id for line in order["items"]
+            ):
+                return True
+        return False

@@ -1,0 +1,26 @@
+[
+  {
+    "item_id": 1,
+    "restaurant_id": 1,
+    "name": "Iced Peach Green Tea Lemonade",
+    "description": "A refreshing blend of green tea, fresh peach syrup, and lemonade.",
+    "price": 0.0,
+    "availability": true
+  },
+  {
+    "item_id": 2,
+    "restaurant_id": 1,
+    "name": "Iced Peach Black Tea Lemonade",
+    "description": "A refreshing blend of Black tea, fresh peach syrup, and lemonade.",
+    "price": 4.99,
+    "availability": true
+  },
+  {
+    "item_id": 3,
+    "restaurant_id": 2,
+    "name": "Avocado Toast",
+    "description": "Toasted sourdough bread topped with smashed avocado, cherry tomatoes, and a sprinkle of feta cheese.",
+    "price": 8.99,
+    "availability": true
+  }
+]

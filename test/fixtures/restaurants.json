@@ -1,0 +1,38 @@
+[
+  {
+    "id": 1,
+    "name": "Green Bowl Cafe",
+    "address": "123 Main Street, Vancouver, BC",
+    "phone_number": "604-555-0101",
+    "email": "hello@greenbowlcafe.com",
+    "website": "https://greenbowlcafe.com",
+    "cuisine_type": "Healthy / Cafe",
+    "opening_hours": "Mon-Sun: 8:00 AM - 9:00 PM",
+    "rating": 4.7,
+    "availability": true
+  },
+  {
+    "id": 2,
+    "name": "Cedar & Co.",
+    "address": "45 Oak Avenue, Burnaby, BC",
+    "phone_number": "604-555-0102",
+    "email": "contact@cedarco.ca",
+    "website": "https://cedarco.ca",
+    "cuisine_type": "Italian",
+    "opening_hours": "Tue-Sun: 11:30 AM - 10:00 PM",
+    "rating": 4.5,
+    "availability": true
+  },
+  {
+    "id": 3,
+    "name": "Saffron Street",
+    "address": "88 Market Road, Surrey, BC",
+    "phone_number": "604-555-0103",
+    "email": "info@saffronstreet.ca",
+    "website": "https://saffronstreet.ca",
+    "cuisine_type": "Indian",
+    "opening_hours": "Daily: 12:00 PM - 11:00 PM",
+    "rating": 4.8,
+    "availability": true
+  }
+]

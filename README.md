@@ -9,6 +9,10 @@ See [M2 accounts](docs/M2-ACCOUNTS.md) for setup, API contracts, provisioning,
 tests and outstanding integration. The M1 description below is historical;
 customer registration offers Customer only.
 
+Registration and sign-in use a non-blank User ID and a password. In API requests,
+send the User ID in the `email` field. User IDs are matched without regard to case
+or leading and trailing spaces.
+
 This is our COSC 310 food-delivery project. Milestone 1 covers restaurant discovery, menu browsing, and restaurant/menu management. Orders and deliveries are planned for later milestones.
 
 ## What works right now
@@ -206,7 +210,7 @@ With dependencies installed and the virtual environment active:
 python -m pytest -q test/
 ```
 
-The current suite contains 62 backend tests covering routes, services, repositories, and failure cases. The shared fixture copies representative JSON into a temporary directory for each test. Legacy menu-retrieval tests still read committed data directly, so isolation needs completing.
+The pytest suite covers routes, services, repositories, and integration flows. Each test runs with a temporary data directory initialized from the restaurant and menu fixtures in `test/fixtures/`. Accounts, carts, and orders start empty.
 
 GitHub Actions installs dependencies and runs tests on pushes and pull requests using Python 3.12. Automated browser tests have not been added yet.
 

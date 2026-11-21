@@ -5,6 +5,12 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_vali
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
 Address = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=500)]
 Role = Literal["customer", "restaurant", "admin"]
+MIN_PASSWORD_LENGTH = 8
+UserId = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, min_length=1, max_length=254),
+    Field(title="User ID", description="Account sign-in identifier as a plain string."),
+]
 
 
 class AccountInput(BaseModel):
@@ -14,18 +20,18 @@ class AccountInput(BaseModel):
 class Registration(AccountInput):
     role: Literal["customer"] = "customer"
     name: Name
-    email: str = Field(max_length=254)
-    password: str = Field(min_length=8, max_length=128)
+    email: UserId
+    password: str = Field(min_length=MIN_PASSWORD_LENGTH, max_length=128)
     delivery_address: Address | None = None
 
     @field_validator("email", mode="before")
     @classmethod
-    def normalize_email(cls, value: object) -> object:
+    def normalize_user_id(cls, value: object) -> object:
         return value.strip().lower() if isinstance(value, str) else value
 
 
 class Login(AccountInput):
-    email: str = Field(max_length=254)
+    email: UserId
     password: str = Field(min_length=1, max_length=128)
 
 
@@ -40,7 +46,7 @@ class AddressUpdate(AccountInput):
 class AccountRead(BaseModel):
     id: int
     name: str
-    email: str
+    email: str = Field(title="User ID", description="Account sign-in identifier.")
     role: Role
     is_active: bool
     delivery_address: str | None = None

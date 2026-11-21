@@ -17,6 +17,7 @@ from app.errors import (
     MenuItemNotFoundError,
     OrderNotFoundError,
     RestaurantNotFoundError,
+    ResourceInUseError
 )
 
 order_repo = OrderRepository()

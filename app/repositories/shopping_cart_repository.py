@@ -21,7 +21,7 @@ _save(self, records: list[dict]) -> None
 to save updated/edited/deleted/added data give with data have been edited/deleted/updated opetions
 
 ```
-cart_add_customer(self,customer_id:int) -> bool:
+cart_repo_get_create_cart(self,customer_id:int) -> bool:
 ```
 
 get customer cart, if they do not have one create one for them with empty cart
@@ -132,7 +132,7 @@ To view all selected items in customer's cart
         with open(data_path, "w", encoding="utf-8") as f:
             json.dump(records, f, indent=2)
 
-    def cart_add_customer(self, customer_id: int) -> bool:
+    def cart_repo_get_create_cart(self, customer_id: int) -> bool:
         """
         get customer cart, if they do not have one create one for them with empty cart
 
@@ -216,3 +216,13 @@ To view all selected items in customer's cart
                 self._save(all_carts)
                 return cart
         return None
+
+    def cart_repo_has_reference(
+        self, restaurant_id: int, item_id: int | None = None
+    ) -> bool:
+        return any(
+            line["restaurant_id"] == restaurant_id
+            and (item_id is None or line["item_id"] == item_id)
+            for cart in self._load()
+            for line in cart["items"]
+        )

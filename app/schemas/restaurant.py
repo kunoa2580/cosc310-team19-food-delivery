@@ -40,3 +40,8 @@ class RestaurantUpdate(BaseModel):
     rating: float | None = Field(default=None, ge=0, le=5, allow_inf_nan=False)
     availability: bool | None = None
 
+
+class RestaurantPreview(BaseModel):
+    restaurant: RestaurantCreate
+    other_names: list[str]
+

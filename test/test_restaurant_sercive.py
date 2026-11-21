@@ -73,12 +73,15 @@ def test_restaurant_service_get_by_cuisine_not_found(client):
         restaurant_service_get_by_cuisine("the cuisine")
 
 def test_restaurant_service_delete_good(client):
+    # Use a restaurant with no saved references.
+    restaurant = restaurant_service_create(RestaurantCreate(**sample_data[0]))
     response = restaurant_service_list()
     len_before_delete = len(response)
-    restaurant_service_delete(1)
+    restaurant_service_delete(restaurant.id)
     after_delete = restaurant_service_list()
     len_after_delete = len(after_delete)
     assert len_before_delete-1 ==  len_after_delete
+    assert all(item.id != restaurant.id for item in after_delete)
 
 
 def test_restaurant_service_delete_not_found(client):

@@ -8,13 +8,13 @@ from app.services.session_service import sessions, SESSION_SECONDS
 
 router = APIRouter(tags=["Accounts"], responses={
     401: {"description": "Missing, invalid, or expired session"},
-    403: {"description": "Inactive account or wrong role"},
+    403: {"description": "Account is deactivated or has the wrong role"},
     422: {"description": "Invalid request fields; input values are not echoed"},
 })
 
 
 @router.post("/customers", response_model=AccountRead, status_code=201,
-             responses={409: {"description": "Email is already registered"}},
+             responses={409: {"description": "User ID is already registered"}},
              summary="Register a customer; role is always customer")
 def register(body: Registration) -> AccountRead:
     return service.register(body)
@@ -58,10 +58,9 @@ def update_address(body: AddressUpdate, account: AccountRead = Depends(customer)
 
 
 @router.delete("/customers/me", status_code=204, summary="Deactivate without deleting historical identity")
-def deactivate(token: str = Depends(session_token),
-               account: AccountRead = Depends(customer)) -> None:
+def deactivate(account: AccountRead = Depends(customer)) -> None:
     service.update_customer(account.id, {"is_active": False})
-    sessions.remove(token)
+    sessions.revoke_for_deactivation(account.id)
 
 
 

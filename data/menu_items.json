@@ -4,7 +4,7 @@
     "restaurant_id": 1,
     "name": "Iced Peach Green Tea Lemonade",
     "description": "A refreshing blend of green tea, fresh peach syrup, and lemonade.",
-    "price": 0.00,
+    "price": 0.0,
     "availability": true
   },
   {
@@ -12,7 +12,7 @@
     "restaurant_id": 1,
     "name": "Iced Peach Black Tea Lemonade",
     "description": "A refreshing blend of Black tea, fresh peach syrup, and lemonade.",
-    "price": 4.99,
+    "price": 6.0,
     "availability": true
   },
   {
@@ -61,22 +61,6 @@
     "name": "Steak Tikka Masala",
     "description": "Tender steak pieces cooked in a creamy tomato sauce with aromatic spices.",
     "price": 12.99,
-    "availability": true
-  },
-  {
-    "item_id": 9,
-    "restaurant_id": 1,
-    "name": "string",
-    "description": "string",
-    "price": 0.0,
-    "availability": true
-  },
-  {
-    "item_id": 10,
-    "restaurant_id": 1,
-    "name": "AAAA",
-    "description": "AAA",
-    "price": 100000000000.0,
     "availability": true
   },
   {

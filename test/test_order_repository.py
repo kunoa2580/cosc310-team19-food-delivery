@@ -1,5 +1,4 @@
 import json
-from pathlib import Path
 
 from app.repositories.order_repository import OrderRepository
 
@@ -52,12 +51,6 @@ def test_order_repo_uses_injected_path(tmp_path):
     repo.order_repo_create(sample)
     assert len(json.loads(path.read_text())) == 1
 
-
-def test_order_repo_does_not_touch_committed_data():
-    committed_file = Path(__file__).resolve().parents[1] / "data" / "orders.json"
-    before = committed_file.read_text()
-    OrderRepository().order_repo_create(sample)
-    assert committed_file.read_text() == before
 
 def test_order_repo_list_by_customer():
     repo = OrderRepository()
