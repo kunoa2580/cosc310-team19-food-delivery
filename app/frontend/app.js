@@ -9,7 +9,10 @@ let account = null;
 let sessionToken = "";
 let cart = null;
 let viewedRestaurantId = null;
-let demoMenus = null;
+let localMenuEdits = false;
+
+// Shared credentials for the demo customer. This account is separate from personal accounts.
+const demoCustomer = { email: "customer@demo.com", password: "demo-customer-123" };
 
 function element(id) {
     return document.getElementById(id);
@@ -22,18 +25,32 @@ function showNotice(message, isError = false) {
     notice.hidden = !message;
 }
 
+function canManageRestaurants() {
+    return account?.role === "restaurant" || account?.role === "admin";
+}
+
+function canEditMenu() {
+    return localMenuEdits || canManageRestaurants();
+}
+
 function showView(id) {
     const isCustomer = account?.role === "customer";
+    const canEditRestaurant = canManageRestaurants();
+    const managementView = id === "manage-view" || id === "manage-restaurant-view";
     document.querySelectorAll(".view").forEach(function (view) {
         view.hidden = view.id !== id;
     });
-    element("guest-sign-in").hidden = !!account || !!demoMenus || id === "login-view";
+    element("guest-sign-in").hidden = !!account || id === "login-view" || managementView;
+    element("open-management").hidden = id === "login-view" || managementView;
     element("open-cart").hidden = !isCustomer || id === "cart-view";
     element("open-account").hidden = !isCustomer || id === "account-view";
     element("sign-out").hidden = !account;
-    element("exit-management-demo").hidden = !demoMenus;
-    element("management-demo-notice").hidden = !demoMenus;
-    element("refresh-manager").hidden = !!demoMenus;
+    element("management-sign-in-hint").hidden = !managementView || canEditRestaurant || localMenuEdits;
+    element("new-restaurant").hidden = !canEditRestaurant;
+    element("restaurant-fields").disabled = !canEditRestaurant;
+    element("restaurant-actions").hidden = !canEditRestaurant;
+    element("new-menu-item").hidden = !canEditMenu();
+    element("menu-editor").hidden = !canEditMenu();
 }
 
 // Handles FastAPI string errors, Pydantic's error list, and empty DELETE responses.
@@ -219,7 +236,11 @@ function changedFields(values, original) {
 }
 
 function showManagement() {
+    selectedRestaurant = null;
     const container = element("managed-restaurants");
+    let action = "View restaurant and menu";
+    if (canManageRestaurants()) action = "Edit restaurant and menu";
+    else if (localMenuEdits) action = "Edit menu";
     container.replaceChildren();
     if (restaurants.length === 0) emptyMessage(container, "No restaurants yet.");
     restaurants.forEach(function (restaurant) {
@@ -227,11 +248,17 @@ function showManagement() {
         card.append(
             textNode("strong", restaurant.name),
             textNode("span", restaurant.cuisine_type, "muted"),
-            textNode("span", "Edit restaurant and menu")
+            textNode("span", action)
         );
         container.appendChild(card);
     });
     showView("manage-view");
+}
+
+async function browseManagement() {
+    const [config] = await Promise.all([api("/ui-config"), loadRestaurants()]);
+    localMenuEdits = config.local_menu_edits;
+    showManagement();
 }
 
 function newRestaurant() {
@@ -246,27 +273,23 @@ function newRestaurant() {
     showView("manage-restaurant-view");
 }
 
-async function managementMenu(restaurantId) {
-    const path = "/restaurant/" + restaurantId + "/menu-items";
-    if (!demoMenus) return api(path);
-    if (!demoMenus.has(restaurantId)) demoMenus.set(restaurantId, await api(path));
-    return demoMenus.get(restaurantId);
+function managementMenu(restaurantId) {
+    return api("/restaurant/" + restaurantId + "/menu-items");
 }
 
 async function selectRestaurant(id) {
-    const restaurant = demoMenus
-        ? restaurants.find(function (entry) { return entry.id === id; })
-        : await api("/restaurants/" + id);
-    if (!restaurant) throw new Error("Restaurant not found.");
+    const restaurant = await api("/restaurants/" + id);
     const items = await managementMenu(id);
     selectedRestaurant = restaurant;
     menuItems = items;
     element("delete-restaurant").hidden = false;
-    element("restaurant-form-title").textContent = "Edit " + restaurant.name;
+    element("restaurant-form-title").textContent = canManageRestaurants()
+        ? "Edit " + restaurant.name
+        : restaurant.name;
     element("save-restaurant").textContent = "Save restaurant changes";
     fillForm("restaurant-form", restaurant);
     element("menu-workspace").hidden = false;
-    renderMenu("manager-menu", menuItems, true);
+    renderMenu("manager-menu", menuItems, canEditMenu());
     resetMenuForm();
     showView("manage-restaurant-view");
 }
@@ -277,27 +300,9 @@ async function saveRestaurant() {
     const changes = creating ? values : changedFields(values, selectedRestaurant);
     if (Object.keys(changes).length === 0) { showNotice("No restaurant changes to save."); return; }
 
-    let restaurant;
-    if (demoMenus) {
-        const validated = await api("/restaurants/validate", "POST", {
-            restaurant: values,
-            other_names: restaurants
-                .filter(function (entry) { return entry.id !== selectedRestaurant?.id; })
-                .map(function (entry) { return entry.name; }),
-        });
-        if (creating) {
-            const id = Math.max(0, ...restaurants.map(function (entry) { return entry.id; })) + 1;
-            restaurant = { ...validated, id };
-            restaurants.push(restaurant);
-            demoMenus.set(id, []);
-        } else {
-            restaurant = Object.assign(selectedRestaurant, validated);
-        }
-    } else {
-        const path = creating ? "/restaurants" : "/restaurants/" + selectedRestaurant.id;
-        restaurant = await api(path, creating ? "POST" : "PATCH", changes);
-        await loadRestaurants();
-    }
+    const path = creating ? "/restaurants" : "/restaurants/" + selectedRestaurant.id;
+    const restaurant = await api(path, creating ? "POST" : "PATCH", changes);
+    await loadRestaurants();
     await selectRestaurant(restaurant.id);
     showNotice(creating ? "Restaurant created. You can now add menu items." : "Restaurant changes saved.");
 }
@@ -307,19 +312,8 @@ async function deleteRestaurant() {
     const restaurant = selectedRestaurant;
     if (!window.confirm('Delete "' + restaurant.name + '"? This cannot be undone.')) return;
 
-    // Check current items before deleting through the management interface.
-    const items = await managementMenu(restaurant.id);
-    if (items.length > 0) {
-        throw new Error("Delete all menu items from this restaurant before deleting the restaurant.");
-    }
-
-    if (demoMenus) {
-        restaurants = restaurants.filter(function (entry) { return entry.id !== restaurant.id; });
-        demoMenus.delete(restaurant.id);
-    } else {
-        await api("/restaurants/" + restaurant.id, "DELETE");
-        await loadRestaurants();
-    }
+    await api("/restaurants/" + restaurant.id, "DELETE");
+    await loadRestaurants();
     showManagement();
     showNotice("Restaurant deleted.");
 }
@@ -341,7 +335,7 @@ function editMenuItem(item) {
 
 async function refreshMenu() {
     menuItems = await managementMenu(selectedRestaurant.id);
-    renderMenu("manager-menu", menuItems, true);
+    renderMenu("manager-menu", menuItems, canEditMenu());
 }
 
 async function saveMenuItem() {
@@ -351,24 +345,9 @@ async function saveMenuItem() {
     const changes = creating ? values : changedFields(values, editingMenuItem);
     if (Object.keys(changes).length === 0) { showNotice("No menu changes to save."); return; }
 
-    if (demoMenus) {
-        const validated = await api("/restaurant/menu-items/validate", "POST", {
-            item: values,
-            other_names: menuItems
-                .filter(function (item) { return item.item_id !== editingMenuItem?.item_id; })
-                .map(function (item) { return item.name; }),
-        });
-        if (creating) {
-            const itemId = Math.max(0, ...menuItems.map(function (item) { return item.item_id; })) + 1;
-            menuItems.push({ ...validated, item_id: itemId, restaurant_id: selectedRestaurant.id });
-        } else {
-            Object.assign(editingMenuItem, validated);
-        }
-    } else {
-        const path = "/restaurant/" + selectedRestaurant.id + "/menu-items";
-        if (creating) await api(path + "/create", "POST", changes);
-        else await api(path + "/update/" + editingMenuItem.item_id, "PATCH", changes);
-    }
+    const path = "/restaurant/" + selectedRestaurant.id + "/menu-items";
+    if (creating) await api(path + "/create", "POST", changes);
+    else await api(path + "/update/" + editingMenuItem.item_id, "PATCH", changes);
     await refreshMenu();
     resetMenuForm();
     showNotice(creating ? "Menu item added." : "Menu item changes saved.");
@@ -376,12 +355,7 @@ async function saveMenuItem() {
 
 async function deleteMenuItem(item) {
     if (!window.confirm('Delete "' + item.name + '" from this menu?')) return;
-    if (demoMenus) {
-        const remaining = menuItems.filter(function (entry) { return entry.item_id !== item.item_id; });
-        demoMenus.set(selectedRestaurant.id, remaining);
-    } else {
-        await api("/restaurant/" + selectedRestaurant.id + "/menu-items/delete/" + item.item_id, "DELETE");
-    }
+    await api("/restaurant/" + selectedRestaurant.id + "/menu-items/delete/" + item.item_id, "DELETE");
     await refreshMenu();
     if (editingMenuItem && editingMenuItem.item_id === item.item_id) resetMenuForm();
     showNotice("Menu item deleted.");
@@ -396,22 +370,37 @@ function bindClick(id, action) {
     element(id).addEventListener("click", function () { run(action); });
 }
 
+function openLogin() {
+    showView("login-view");
+    element("account-login").elements.email.focus();
+}
+
 bindClick("browse-guest", browseRestaurants);
-bindClick("guest-sign-in", function () { showView("login-view"); });
+bindClick("manage-restaurants", browseManagement);
+bindClick("open-management", browseManagement);
+bindClick("guest-sign-in", function () {
+    selectedRestaurant = null;
+    openLogin();
+});
+bindClick("sign-in-to-edit", openLogin);
 bindClick("open-account", function () { showView("account-view"); });
 bindClick("back-from-account", browseRestaurants);
+bindClick("open-order-history", showOrderHistory);
+bindClick("back-from-order-history", function () { showView("account-view"); });
 bindClick("refresh-restaurants", loadRestaurants);
 bindClick("back-to-restaurants", browseRestaurants);
 bindClick("new-restaurant", newRestaurant);
 bindClick("delete-restaurant", deleteRestaurant);
 bindClick("back-to-management", showManagement);
-bindClick("refresh-manager", async function () {
-    await loadRestaurants();
-    showManagement();
+bindClick("back-from-management", function () {
+    if (account) return browseRestaurants();
+    openLogin();
 });
+bindClick("refresh-manager", browseManagement);
 bindClick("new-menu-item", function () { resetMenuForm(); element("menu-form").scrollIntoView({ behavior: "smooth" }); });
 bindClick("cancel-menu-edit", resetMenuForm);
 bindClick("open-cart", async function () { await loadCart(); showView("cart-view"); });
+bindClick("refresh-cart", loadCart);
 bindClick("back-from-cart", browseRestaurants);
 bindClick("clear-cart", clearCart);
 bindClick("checkout", checkout);
@@ -422,6 +411,7 @@ element("restaurant-form").addEventListener("submit", function (event) { event.p
 element("menu-form").addEventListener("submit", function (event) { event.preventDefault(); run(saveMenuItem); });
 
 function displayAccount(value) {
+    if (account?.id !== value?.id) element("order-history-list").replaceChildren();
     account = value;
     element("account-summary").textContent = account ? account.name + " — " + account.email : "";
     element("profile-form").elements.name.value = account?.name || "";
@@ -441,16 +431,21 @@ element("account-register").addEventListener("submit", function (event) {
 });
 
 async function signIn(credentials) {
-    const result = await api("/auth/login", "POST", credentials);
+    await showSignedInAccount(await api("/auth/login", "POST", credentials));
+}
+
+async function showSignedInAccount(result) {
     sessionToken = result.access_token;
     displayAccount(result.account);
     element("account-login").reset();
-    if (account.role === "restaurant" || account.role === "admin") {
+    if (canManageRestaurants()) {
+        const restaurantId = selectedRestaurant?.id;
         element("managed-restaurants").replaceChildren();
         showView("manage-view");
-        await loadRestaurants();
-        showManagement();
+        await browseManagement();
+        if (restaurantId) await selectRestaurant(restaurantId);
     } else {
+        selectedRestaurant = null;
         showView("browse-view");
         await loadRestaurants();
     }
@@ -463,18 +458,20 @@ element("account-login").addEventListener("submit", function (event) {
 });
 
 bindClick("demo-sign-in", async function () {
-    const credentials = {
-        email: "demo-" + crypto.randomUUID() + "@example.com",
-        password: crypto.randomUUID(),
-    };
-    await api("/customers", "POST", { name: "Demo Customer", ...credentials });
-    await signIn(credentials);
-});
-
-bindClick("demo-admin-sign-in", async function () {
-    await loadRestaurants();
-    demoMenus = new Map();
-    showManagement();
+    let result;
+    try {
+        result = await api("/auth/login", "POST", demoCustomer);
+    } catch (error) {
+        if (error.status !== 401) throw error;
+        try {
+            await api("/customers", "POST", { name: "Demo Customer", ...demoCustomer });
+        } catch (registrationError) {
+            // Another demo visitor may have registered the shared account first.
+            if (registrationError.status !== 409) throw registrationError;
+        }
+        result = await api("/auth/login", "POST", demoCustomer);
+    }
+    await showSignedInAccount(result);
 });
 
 element("profile-form").addEventListener("submit", function (event) {
@@ -496,7 +493,6 @@ function clearAccount() {
     displayAccount(null);
     sessionToken = "";
     selectedRestaurant = null;
-    demoMenus = null;
     menuItems = [];
     editingMenuItem = null;
     viewedRestaurantId = null;
@@ -505,7 +501,6 @@ function clearAccount() {
     renderOrder(null);
     showView("login-view");
 }
-bindClick("exit-management-demo", clearAccount);
 bindClick("sign-out", async function () {
     await api("/auth/logout", "POST");
     clearAccount();
@@ -544,6 +539,7 @@ function renderCart() {
     }
     lines.forEach(function (line) {
         const card = textNode("article", "", "card");
+        if (!line.availability) card.appendChild(availableTag(false));
         card.append(
             textNode("h3", line.name),
             textNode("p", "$" + line.price.toFixed(2) + " CAD each", "muted"),
@@ -560,22 +556,47 @@ function renderCart() {
     });
 }
 
+function renderOrderItems(order) {
+    const items = document.createElement("ul");
+    order.items.forEach(function (item) {
+        items.appendChild(textNode("li", item.quantity + " × " + item.name +
+            " at $" + item.unit_price.toFixed(2) + " each"));
+    });
+    return items;
+}
+
 function renderOrder(order) {
     const confirmation = element("order-confirmation");
     confirmation.replaceChildren();
     confirmation.hidden = !order;
     if (!order) return;
 
-    const items = document.createElement("ul");
-    order.items.forEach(function (item) {
-        items.appendChild(textNode("li", item.quantity + " × " + item.name +
-            " at $" + item.unit_price.toFixed(2) + " each"));
-    });
     confirmation.append(
         textNode("h2", "Order #" + order.order_id + " placed"),
-        items,
+        renderOrderItems(order),
         textNode("p", "Final total $" + order.total.toFixed(2) + " CAD", "price")
     );
+}
+
+async function showOrderHistory() {
+    const orders = await api("/customers/" + account.id + "/orders");
+    const list = element("order-history-list");
+    list.replaceChildren();
+    if (orders.length === 0) emptyMessage(list, "You have no orders yet.");
+
+    for (const order of orders) {
+        const card = textNode("article", "", "panel");
+        const placedAt = textNode("time", new Date(order.created_at).toLocaleString(), "muted");
+        placedAt.dateTime = order.created_at;
+        card.append(
+            textNode("h2", "Order #" + order.order_id),
+            placedAt,
+            renderOrderItems(order),
+            textNode("p", "Total $" + order.total.toFixed(2) + " CAD", "price")
+        );
+        list.appendChild(card);
+    }
+    showView("order-history-view");
 }
 
 async function addToCart(item) {

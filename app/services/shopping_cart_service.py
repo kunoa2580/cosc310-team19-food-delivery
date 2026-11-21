@@ -6,10 +6,12 @@ from app.schemas.shopping_cart import ShoppingCartRead, ItemInCartCreate
 from app.services.menu_item_service import menu_service_get_by_id
 from app.services.account_service import require_active_customer
 from app.errors import (
-                        CartItemNotFoundError,
-                        CartNotFoundError,
-                        CartRestaurantMismatchError,
-                        MenuItemIsNotAvailableError)
+    CartItemNotFoundError,
+    CartNotFoundError,
+    CartRestaurantMismatchError,
+    MenuItemIsNotAvailableError,
+    MenuItemNotFoundError,
+)
 
 
 class CartStore(Protocol):
@@ -104,13 +106,24 @@ class shopping_cart_service():
             raise CartNotFoundError(f"No cart for customer {customer_id}")
         return self._to_read(cart)
 
-        
-
     def _to_read(self, cart: dict) -> ShoppingCartRead:
-        
-        subtotal = sum(line["price"] * line["quantity"] for line in cart["items"])
-        total = subtotal + (self.DELIVERY_FEE if cart["items"] else 0.0)
-        return ShoppingCartRead(**cart, subtotal=round(subtotal, 2), total=round(total, 2))
+        items = []
+        for line in cart["items"]:
+            try:
+                current = menu_service_get_by_id(line["restaurant_id"], line["item_id"])
+            except MenuItemNotFoundError:
+                # Keep a missing item visible so the customer can remove it.
+                items.append(line)
+            else:
+                items.append({**line, "price": current.price})
+
+        subtotal = sum(line["price"] * line["quantity"] for line in items)
+        total = subtotal + (self.DELIVERY_FEE if items else 0.0)
+        return ShoppingCartRead(
+            **{**cart, "items": items},
+            subtotal=round(subtotal, 2),
+            total=round(total, 2),
+        )
     
     
     def total_cart_price_service(self, customer_id: int) -> float:

@@ -36,32 +36,54 @@ def test_registration_normalizes_persists_and_never_returns_credentials(visitor)
     assert data["role"] == "customer"
     assert "password" not in result.text
     stored = AccountRepository().get(data["id"])
-    assert stored["password_hash"] != "correct-password"
+    assert stored["password"] == "correct-password"
+    assert "password_hash" not in stored
     assert AccountRepository().get(data["id"]) == stored
     assert register(visitor).status_code == 409
     assert len(AccountRepository().list_accounts()) == 1
 
 
+@pytest.mark.parametrize("user_id", ["KitchenDemo", "a@e"])
+def test_register_and_sign_in_with_plain_user_id(visitor, user_id):
+    registered = register(visitor, user_id)
+    assert registered.status_code == 201
+    assert registered.json()["email"] == user_id.lower()
+    assert register(visitor, f" {user_id.upper()} ").status_code == 409
+    assert sign_in(visitor, f" {user_id.upper()} ").json()["account"]["id"] == registered.json()["id"]
+
+
+def test_blank_user_id_is_rejected_without_creating_an_account(visitor):
+    assert register(visitor, " \t ").status_code == 422
+    response = visitor.post("/auth/login", json={"email": "", "password": "correct-password"})
+    assert response.status_code == 422
+    assert AccountRepository().list_accounts() == []
+
+
+def test_registration_rejects_password_shorter_than_eight_characters(visitor):
+    response = visitor.post("/customers", json={
+        "name": "Alice", "email": "alice@example.com", "password": "1234567",
+    })
+    assert response.status_code == 422
+    assert "1234567" not in response.text
+    assert AccountRepository().list_accounts() == []
+
+
 def test_profile_address_deactivation_and_old_session(visitor):
     account_id = register(visitor).json()["id"]
-    login = sign_in(visitor)
-    old_token = login.json()["access_token"]
+    sign_in(visitor)
     assert visitor.patch("/customers/me", json={"name": "New Name"}).status_code == 200
     assert visitor.put("/customers/me/address", json={"delivery_address": "123 Main St"}).status_code == 200
-    profile = visitor.get("/customers/me").json()
-    assert profile["name"] == "New Name"
-    assert profile["delivery_address"] == "123 Main St"
-    assert visitor.patch("/customers/me", json={"role": "admin"}).status_code == 422
-    assert visitor.put("/customers/me/address", json={"delivery_address": "  "}).status_code == 422
-    assert service.get_account(account_id).delivery_address == "123 Main St"
     assert visitor.delete("/customers/me").status_code == 204
-    assert not AccountRepository().get(account_id)["is_active"]
-    visitor.headers["Authorization"] = "Bearer " + old_token
-    assert visitor.get("/customers/me").status_code in (401, 403)
-    assert visitor.post("/auth/login", json={
-        "email": "alice@example.com", "password": "correct-password"}).status_code == 403
-    with pytest.raises(service.Forbidden):
-        service.require_active_customer(account_id)
+
+    name_edit = visitor.patch("/customers/me", json={"name": "Blocked Name"})
+    address_edit = visitor.put("/customers/me/address", json={"delivery_address": "456 Main St"})
+    for response in (name_edit, address_edit):
+        assert response.status_code == 403
+        assert response.json() == {"detail": "Account is deactivated"}
+
+    saved = AccountRepository().get(account_id)
+    assert not saved["is_active"]
+    assert (saved["name"], saved["delivery_address"]) == ("New Name", "123 Main St")
 
 
 def test_login_failure_expiry_logout_and_required_token(visitor):
@@ -69,6 +91,8 @@ def test_login_failure_expiry_logout_and_required_token(visitor):
     assert visitor.get("/customers/me").status_code == 401
     assert visitor.post("/auth/login", json={
         "email": "alice@example.com", "password": "wrong"}).status_code == 401
+    assert visitor.post("/auth/login", json={
+        "email": "alice@example.com", "password": "Correct-password"}).status_code == 401
     sign_in(visitor)
     token = visitor.headers.pop("Authorization")
     assert visitor.patch("/customers/me", json={"name": "Intruder"}).status_code == 401
@@ -78,11 +102,14 @@ def test_login_failure_expiry_logout_and_required_token(visitor):
     assert visitor.get("/customers/me").status_code == 401
 
 
-def test_other_customer_identity_cannot_be_supplied(visitor):
+def test_profile_updates_reject_invalid_fields_and_other_customer_id(visitor):
     register(visitor)
     other = register(visitor, "other@example.com").json()
     sign_in(visitor)
     assert visitor.patch("/customers/me", json={"id": other["id"], "name": "Stolen"}).status_code == 422
+    assert visitor.patch("/customers/me", json={"role": "admin"}).status_code == 422
+    assert visitor.put("/customers/me/address", json={"delivery_address": "  "}).status_code == 422
+    assert service.get_account(1).delivery_address is None
     assert service.get_account(other["id"]).name == "Alice"
     with pytest.raises(service.Forbidden):
         service.require_owner(service.get_account(1), other["id"])
@@ -101,14 +128,28 @@ def test_customer_sign_in_and_browse_restaurant_menu(visitor):
 
 
 def test_deactivation_revokes_all_sessions_and_preserves_identity(visitor):
-    register(visitor)
+    account_id = register(visitor).json()["id"]
     sign_in(visitor)
     with TestClient(app) as other:
-        sign_in(other)
+        other_token = sign_in(other).json()["access_token"]
         assert visitor.delete("/customers/me").status_code == 204
-        assert other.get("/customers/me").status_code == 403
+        for client in (visitor, other):
+            response = client.get("/customers/me")
+            assert response.status_code == 403
+            assert response.json() == {"detail": "Account is deactivated"}
+        sessions.sessions[other_token].expires_at = 0
+        expired = other.get("/customers/me")
+        assert expired.status_code == 401
+        assert expired.json() == {"detail": "Sign in required"}
+
+    login = visitor.post("/auth/login", json={"email": "alice@example.com", "password": "correct-password"})
+    assert login.status_code == 403
+    assert login.json() == {"detail": "Account is deactivated"}
+    with pytest.raises(service.Forbidden):
+        service.require_active_customer(account_id)
+
     new = register(visitor, "next@example.com").json()
     assert new["id"] == 2
-    assert AccountRepository().get(1) is not None
+    assert AccountRepository().get(account_id) is not None
 
 

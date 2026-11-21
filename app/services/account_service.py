@@ -1,10 +1,9 @@
 """Account rules, password verification, and shared authorization policies."""
-import hashlib
-import secrets
 from app.repositories.account_repository import AccountRepository, account_lock
-from app.schemas.account import AccountRead, Registration
+from app.schemas.account import AccountRead, MIN_PASSWORD_LENGTH, Registration
 
 repository = AccountRepository()
+ACCOUNT_DEACTIVATED_MESSAGE = "Account is deactivated"
 
 
 class AccountError(Exception):
@@ -27,25 +26,6 @@ class AccountNotFound(AccountError):
     pass
 
 
-def hash_password(password: str) -> str:
-    salt = secrets.token_hex(16)
-    digest = hashlib.scrypt(password.encode(), salt=bytes.fromhex(salt),
-                            n=16384, r=8, p=1).hex()
-    return f"scrypt:{salt}:{digest}"
-
-
-def verify_password(password: str, stored: str) -> bool:
-    try:
-        algorithm, salt, expected = stored.split(":")
-        if algorithm != "scrypt":
-            return False
-        actual = hashlib.scrypt(password.encode(), salt=bytes.fromhex(salt),
-                                n=16384, r=8, p=1).hex()
-        return secrets.compare_digest(actual, expected)
-    except (ValueError, TypeError):
-        return False
-
-
 def register(payload: Registration) -> AccountRead:
     return create_account(payload)
 
@@ -53,13 +33,12 @@ def register(payload: Registration) -> AccountRead:
 def create_account(payload: Registration, role: str = "customer",
                    restaurant_ids: list[int] | None = None) -> AccountRead:
     """Trusted provisioning only: public registration never accepts role/ownership."""
-    account = {**payload.model_dump(exclude={"password"}),
-               "password_hash": hash_password(payload.password), "role": role,
+    account = {**payload.model_dump(), "role": role,
                "is_active": True, "restaurant_ids": restaurant_ids or []}
     with account_lock:
         accounts = repository.list_accounts()
         if any(a["email"] == payload.email for a in accounts):
-            raise AccountConflict("Email is already registered")
+            raise AccountConflict("User ID is already registered")
         account["id"] = max((a["id"] for a in accounts), default=0) + 1
         public = AccountRead(**account)
         accounts.append(account)
@@ -83,8 +62,10 @@ def require_active_customer(customer_id: int) -> AccountRead:
 def require_role(account: AccountRead, role: str) -> None:
     # Reload state: a previously obtained identity must not bypass deactivation.
     current = get_account(account.id)
-    if not current.is_active or current.role != role:
-        raise Forbidden("Account is inactive or does not have the required role")
+    if not current.is_active:
+        raise Forbidden(ACCOUNT_DEACTIVATED_MESSAGE)
+    if current.role != role:
+        raise Forbidden("Account does not have the required role")
 
 
 def require_owner(account: AccountRead, customer_id: int) -> None:
@@ -105,13 +86,17 @@ def update_customer(customer_id: int, changes: dict) -> AccountRead:
         return AccountRead(**account)
 
 
-def authenticate(email: str, password: str) -> AccountRead:
-    account = next((a for a in repository.list_accounts()
-                    if a["email"] == email.strip().lower()), None)
-    if account is None or not verify_password(password, account["password_hash"]):
-        raise Unauthenticated("Invalid email or password")
+def authenticate(user_id: str, password: str) -> AccountRead:
+    if len(password) < MIN_PASSWORD_LENGTH:
+        raise Unauthenticated("Invalid user ID or password")
+
+    normalized_user_id = user_id.strip().lower()
+    account = next((entry for entry in repository.list_accounts()
+                    if entry["email"] == normalized_user_id), None)
+    if account is None or account.get("password") != password:
+        raise Unauthenticated("Invalid user ID or password")
     if not account["is_active"]:
-        raise Forbidden("Account is inactive")
+        raise Forbidden(ACCOUNT_DEACTIVATED_MESSAGE)
     return AccountRead(**account)
 
 

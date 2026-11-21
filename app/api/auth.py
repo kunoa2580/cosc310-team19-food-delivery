@@ -3,7 +3,7 @@ from fastapi import Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.schemas.account import AccountRead
 from app.services.account_service import (
-    Forbidden, Unauthenticated, AccountNotFound, get_account, require_role,
+    ACCOUNT_DEACTIVATED_MESSAGE, Forbidden, Unauthenticated, AccountNotFound, get_account, require_role,
 )
 from app.services.session_service import sessions
 
@@ -23,7 +23,7 @@ def current_account(token: str = Depends(session_token)) -> AccountRead:
     except AccountNotFound as error:
         raise Unauthenticated("Sign in required") from error
     if not account.is_active:
-        raise Forbidden("Account is inactive")
+        raise Forbidden(ACCOUNT_DEACTIVATED_MESSAGE)
     return account
 
 

@@ -1,8 +1,10 @@
 from types import SimpleNamespace
 
 import pytest
+from fastapi.testclient import TestClient
 
 from app.errors import InvalidCartError
+from app.main import create_local_demo_app
 from app.repositories.shopping_cart_repository import ShoppingCartRepository
 from app.schemas.menu_item import MenuItemUpdate
 from app.services import order_service
@@ -50,17 +52,47 @@ def test_checkout_with_real_cart_creates_order_and_clears_cart(client):
     assert client.get(f"/orders/{order['order_id']}").json() == order
 
 
-# Add an item to the cart → Change the menu price → Place order → Confirm the order uses the current menu price, not the old price stored in the cart.
-def test_checkout_uses_current_menu_price_not_the_price_stored_in_cart(client):
+def test_menu_price_change_updates_existing_cart_and_checkout(client):
     customer_id = register_customer(client)
-    client.post("/cart/add/1/2/2")
-    assert client.get("/cart/view/").json()["items"][0]["price"] == 4.99
+    assert client.post("/cart/add/1/2/2").status_code == 201
+    original = client.get("/cart/view/").json()
+    assert original["items"][0]["price"] == 4.99
+    assert original["total"] == 9.98
 
     menu_service_update(1, 2, MenuItemUpdate(price=6.0))
 
-    order = client.post(f"/customers/{customer_id}/checkout").json()
+    refreshed = client.get("/cart/view/").json()
+    assert refreshed["cart_id"] == original["cart_id"]
+    assert refreshed["items"][0]["price"] == 6.0
+    assert refreshed["subtotal"] == refreshed["total"] == 12.0
+
+    response = client.post(f"/customers/{customer_id}/checkout")
+    assert response.status_code == 201
+    order = response.json()
     assert order["items"][0]["unit_price"] == 6.0
     assert order["total"] == 12.0
+
+
+def test_local_demo_menu_edits_update_existing_cart_and_keep_regular_route_protected(client):
+    path = "/restaurant/1/menu-items/update/2"
+    assert client.patch(path, json={"price": 5.0}).status_code == 401
+    register_customer(client)
+    assert client.patch(path, json={"price": 5.0}).status_code == 403
+    assert client.post("/cart/add/1/2/2").status_code == 201
+
+    application = create_local_demo_app()
+    with TestClient(application, base_url="http://127.0.0.1", client=("127.0.0.1", 50000)) as demo:
+        assert demo.get("/ui-config").json() == {"local_menu_edits": True}
+        assert demo.get("/cart/view/").status_code == 401
+        assert demo.patch(path, json={"price": ""}).status_code == 422
+        assert demo.patch(path, json={"price": 5.0}).status_code == 200
+        assert client.get("/cart/view/").json()["subtotal"] == 10.0
+        assert demo.patch(path, json={"price": 10.0}).status_code == 200
+        assert client.get("/cart/view/").json()["subtotal"] == 20.0
+
+    with TestClient(application, base_url="http://127.0.0.1", client=("192.0.2.1", 50000)) as remote:
+        assert remote.get("/ui-config").json() == {"local_menu_edits": False}
+        assert remote.patch(path, json={"price": 15.0}).status_code == 403
 
 
 # Sign in a customer who has no active cart → Place order → Confirm it is rejected with 400 and no order is created.
@@ -107,3 +139,46 @@ def test_get_active_cart_rejects_items_from_two_restaurants(monkeypatch):
 
     with pytest.raises(InvalidCartError):
         order_service._get_active_cart(4)
+
+
+def test_Lucas_Liu_integration_test(client):
+    buyer_id = register_customer(client, email="buyer@email.com")
+
+    restaurants = client.get("/restaurants")
+    assert restaurants.status_code == 200
+    restaurant_id = restaurants.json()[0]["id"]
+
+    menu = client.get(f"/restaurant/{restaurant_id}/menu-items")
+    assert menu.status_code == 200
+    item = next(entry for entry in menu.json() if entry["availability"] and entry["price"] > 0)
+    item_id = item["item_id"]
+    quantity = 2
+
+    cart_response = client.post(f"/cart/add/{restaurant_id}/{item_id}/{quantity}")
+    assert cart_response.status_code == 201
+    cart = cart_response.json()
+    assert cart["customer_id"] == buyer_id
+    assert cart["items"][0]["item_id"] == item_id
+    assert cart["items"][0]["quantity"] == quantity
+
+    checkout = client.post(f"/customers/{buyer_id}/checkout")
+    assert checkout.status_code == 201
+    order = checkout.json()
+    assert order["customer_id"] == buyer_id
+    assert order["restaurant_id"] == restaurant_id
+    assert order["items"][0]["item_id"] == item_id
+    assert order["items"][0]["quantity"] == quantity
+
+    history_url = f"/customers/{buyer_id}/orders"
+    history = client.get(history_url)
+    assert history.status_code == 200
+    assert history.json() == [order]
+
+    with TestClient(client.app) as other_client:
+        other_id = register_customer(other_client, email="history-other")
+        assert other_id != buyer_id
+        assert other_client.get(history_url).status_code == 403
+
+        other_history = other_client.get(f"/customers/{other_id}/orders")
+        assert other_history.status_code == 200
+        assert other_history.json() == []

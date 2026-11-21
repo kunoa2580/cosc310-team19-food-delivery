@@ -317,6 +317,22 @@ def test_service_calculates_the_total_from_price_times_quantity(service, mocker)
     assert service.total_cart_price_service(CUSTOMER_ID) == 14.97
 
 
+def test_service_refreshes_an_existing_cart_price(service, mocker):
+    menu = mocker.patch(f"{SERVICE}.menu_service_get_by_id", return_value=a_menu_item(price=4.99))
+    original = service.cart_add_item_to_cart_service(CUSTOMER_ID, 1, 1, 2)
+    assert original.total == 9.98
+
+    menu.return_value = a_menu_item(price=6.0)
+    refreshed = service.cart_view_by_customer_service(CUSTOMER_ID)
+
+    assert refreshed.cart_id == original.cart_id
+    assert refreshed.items[0].quantity == 2
+    assert refreshed.items[0].price == 6.0
+    assert refreshed.subtotal == refreshed.total == 12.0
+    assert service.total_cart_price_service(CUSTOMER_ID) == 12.0
+    assert service.repository.cart_view_by_customer_repo(CUSTOMER_ID)["items"][0]["price"] == 4.99
+
+
 def test_service_total_is_zero_for_an_empty_cart(service, mocker):
     mocker.patch(f"{SERVICE}.menu_service_get_by_id", return_value=a_menu_item())
     service.cart_add_item_to_cart_service(CUSTOMER_ID, 1, 1, 1)

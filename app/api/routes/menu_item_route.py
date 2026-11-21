@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status, Depends
-from app.api.auth import reject_customer_edit
+from app.api.auth import current_account, reject_customer_edit
 from app.services.menu_item_service import (
     menu_service_list,
     menu_service_get_by_id,
@@ -10,8 +10,13 @@ from app.services.menu_item_service import (
 )
 from app.errors import MenuItemNotFoundError, DuplicateMenuItemError, InvalidMenuItemUpdateError, MenuItemRestaurantNotFoundError, ResourceInUseError
 from app.schemas.menu_item import MenuItemUpdate, MenuItemCreate, MenuItemRead, MenuItemPreview
+from app.schemas.account import AccountRead
 
 router = APIRouter(prefix="/restaurant")
+
+
+def require_menu_editor(account: AccountRead = Depends(current_account)) -> None:
+    reject_customer_edit(account)
 
 
 @router.post(
@@ -46,7 +51,7 @@ def menu_route_get_by_id(restaurant_id: int, item_id: int) -> MenuItemRead:
     return item
 
 @router.post("/{restaurant_id}/menu-items/create", status_code=status.HTTP_201_CREATED,
-            dependencies=[Depends(reject_customer_edit)],
+            dependencies=[Depends(require_menu_editor)],
             responses={
                 401: {"description": "Sign-in required"},
                 403: {"description": "Customers cannot edit restaurant or menu information"},
@@ -67,7 +72,7 @@ def menu_route_add_item(restaurant_id: int, payload: MenuItemCreate) -> MenuItem
     return item
 	
 @router.delete("/{restaurant_id}/menu-items/delete/{item_id}", status_code=status.HTTP_204_NO_CONTENT,
-               dependencies=[Depends(reject_customer_edit)],
+               dependencies=[Depends(require_menu_editor)],
                 responses={
                     401: {"description": "Sign-in required"},
                     403: {"description": "Customers cannot edit restaurant or menu information"},
@@ -89,7 +94,7 @@ def menu_route_delete_item(restaurant_id: int, item_id: int) -> None:
     return None
 
 @router.patch("/{restaurant_id}/menu-items/update/{item_id}", status_code=status.HTTP_200_OK,
-              dependencies=[Depends(reject_customer_edit)],
+              dependencies=[Depends(require_menu_editor)],
                 responses={
                 400: {"description": "Empty update or invalid fields"},
                 401: {"description": "Sign-in required"},

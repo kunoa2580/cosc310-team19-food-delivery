@@ -37,6 +37,8 @@ textarea { resize: vertical; }
 .checkbox input { width: 18px; height: 18px; }
 .wide { grid-column: 1 / -1; }
 .form-grid { margin-bottom: 20px; }
+#restaurant-fields { border: 0; padding: 0; margin: 0 0 20px; min-inline-size: 0; }
+.home-actions { flex-wrap: wrap; }
 .toolbar { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; margin: 24px 0 18px; }
 .toolbar label { min-width: 165px; }
 .grow { flex: 1; }
@@ -58,6 +60,7 @@ a { color: #296342; }
 .section-heading { justify-content: space-between; margin: 32px 0 20px; }
 .notice { border: 1px solid #bed7c1; background: #eaf3e9; padding: 14px 18px; border-radius: 6px; white-space: pre-wrap; margin-bottom: 24px; }
 .notice.error { color: #8a2929; border-color: #e8bcbc; background: #fff0ee; }
+.management-sign-in { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
 .empty { color: #65736c; padding: 20px 0; grid-column: 1 / -1; }
 footer { padding: 24px; text-align: center; font-size: 12px; color: #65736c; }
 @media (max-width: 850px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

@@ -9,7 +9,7 @@ from app.repositories.restaurant_repository import RestaurantRepository
 def main() -> None:
     parser = argparse.ArgumentParser(description="Create a trusted restaurant/admin account")
     parser.add_argument("--role", choices=["restaurant", "admin"], required=True)
-    parser.add_argument("--email", required=True)
+    parser.add_argument("--user-id", "--email", required=True, help="Account sign-in identifier")
     parser.add_argument("--name", required=True)
     parser.add_argument("--restaurant-id", type=int, action="append", default=[])
     args = parser.parse_args()
@@ -19,7 +19,7 @@ def main() -> None:
     password = getpass("Password (8-128 characters): ")
     if password != getpass("Confirm password: "):
         parser.error("Passwords do not match")
-    account = create_account(Registration(name=args.name, email=args.email, password=password),
+    account = create_account(Registration(name=args.name, email=args.user_id, password=password),
                              role=args.role, restaurant_ids=args.restaurant_id)
     print(f"Created {account.role} account {account.id}")
 
