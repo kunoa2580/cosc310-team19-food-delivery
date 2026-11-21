@@ -17,7 +17,7 @@ class CartStore(Protocol):
     def cart_add_item_to_cart_repo(self, customer_id: int, item: dict) -> dict | None: ...
     def cart_edit_item_repo(self, customer_id: int, item_id: int, quantity: int) -> dict | None: ...
     def cart_empty_items_repo(self, customer_id: int) -> dict | None: ...
-    def cart_add_customer(self, customer_id: int) -> bool: ...
+    def cart_repo_get_create_cart(self, customer_id: int) -> bool: ...
     def cart_close_repo(self, customer_id: int) -> dict | None:...
 """ Desgin approach  """
 
@@ -30,38 +30,39 @@ class shopping_cart_service():
         
 
 
-    def cart_add_item_to_cart_service(self, customer_id:int, restaurant_id:int, item_id:int, quantity:int) -> ShoppingCartRead:
-        
+    def cart_add_item_to_cart_service(
+            self, customer_id: int, restaurant_id: int, item_id: int, quantity: int
+        ) -> ShoppingCartRead:
         repository = self.repository
-        customer = require_active_customer(customer_id)
-        
-        cart = repository.cart_view_by_customer_repo(customer_id)
-        if cart is None:
-            repository.cart_add_customer(customer_id)
-            cart = repository.cart_view_by_customer_repo(customer_id)
+        require_active_customer(customer_id)
+
         item = menu_service_get_by_id(restaurant_id, item_id)
-        if item.availability is False:
+        if not item.availability:
             raise MenuItemIsNotAvailableError(f"Menu item {item_id} is not available")
-        if len(cart["items"]) > 0 and item.restaurant_id != cart["items"][0]["restaurant_id"]:
-            raise CartRestaurantMismatchError(f"item is not from same Restaurant")
-            
-        """{
-        "item_id": 2,
-        "restaurant_id": 1,
-        "name": "Iced Peach Black Tea Lemonade",
-        "price": 4.99,
-        "availability": true,
-        "quantity": 1}
-        """
-        item_to_add = ItemInCartCreate(item_id=item.item_id, 
-                                       restaurant_id=item.restaurant_id, 
-                                       name=item.name ,
-                                       price=item.price,
-                                       availability=item.availability,
-                                       quantity=quantity)
-        # repository.cart_add_item_to_cart_repo(customer_id, item_to_add.model_dump())
-        cart = repository.cart_add_item_to_cart_repo(customer_id, item_to_add.model_dump())
-        return self._to_read(cart)
+
+        cart = repository.cart_view_by_customer_repo(customer_id)
+        if cart is not None and cart["items"]:
+            if item.restaurant_id != cart["items"][0]["restaurant_id"]:
+                raise CartRestaurantMismatchError("Cart items must come from the same restaurant")
+
+        item_to_add = ItemInCartCreate(
+            item_id=item.item_id,
+            restaurant_id=item.restaurant_id,
+            name=item.name,
+            price=item.price,
+            availability=item.availability,
+            quantity=quantity,
+        )
+
+        if cart is None:
+            repository.cart_repo_get_create_cart(customer_id)
+
+        updated_cart = repository.cart_add_item_to_cart_repo(
+            customer_id, item_to_add.model_dump()
+        )
+        if updated_cart is None:
+            raise CartNotFoundError(f"No active cart for customer {customer_id}")
+        return self._to_read(updated_cart)
 
 
     def cart_edit_item_to_cart_service(self, customer_id: int, item_id: int, quantity: int) -> ShoppingCartRead:

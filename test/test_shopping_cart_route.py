@@ -36,7 +36,7 @@ class FakeCartStore:
         return next((c for c in self.carts
                      if c["customer_id"] == customer_id and not c["checkout_status"]), None)
 
-    def cart_add_customer(self, customer_id: int) -> bool:
+    def cart_repo_get_create_cart(self, customer_id: int) -> bool:
         if self._active(customer_id) is not None:
             return False
         self.carts.append({"cart_id": len(self.carts) + 1, "customer_id": customer_id,
@@ -155,12 +155,12 @@ def stub_customer_client(mocker):
 
 
 def test_repo_creates_one_cart_and_refuses_a_second(repository):
-    assert repository.cart_add_customer(CUSTOMER_ID) is True
-    assert repository.cart_add_customer(CUSTOMER_ID) is False
+    assert repository.cart_repo_get_create_cart(CUSTOMER_ID) is True
+    assert repository.cart_repo_get_create_cart(CUSTOMER_ID) is False
 
 
 def test_repo_merges_a_duplicate_item_instead_of_duplicating_the_line(repository):
-    repository.cart_add_customer(CUSTOMER_ID)
+    repository.cart_repo_get_create_cart(CUSTOMER_ID)
     repository.cart_add_item_to_cart_repo(CUSTOMER_ID, a_cart_line(quantity=2))
     cart = repository.cart_add_item_to_cart_repo(CUSTOMER_ID, a_cart_line(quantity=3))
 
@@ -170,7 +170,7 @@ def test_repo_merges_a_duplicate_item_instead_of_duplicating_the_line(repository
 
 
 def test_repo_edit_sets_the_quantity(repository):
-    repository.cart_add_customer(CUSTOMER_ID)
+    repository.cart_repo_get_create_cart(CUSTOMER_ID)
     repository.cart_add_item_to_cart_repo(CUSTOMER_ID, a_cart_line())
 
     cart = repository.cart_edit_item_repo(CUSTOMER_ID, 1, 7)
@@ -178,19 +178,19 @@ def test_repo_edit_sets_the_quantity(repository):
 
 
 def test_repo_edit_to_zero_removes_the_line(repository):
-    repository.cart_add_customer(CUSTOMER_ID)
+    repository.cart_repo_get_create_cart(CUSTOMER_ID)
     repository.cart_add_item_to_cart_repo(CUSTOMER_ID, a_cart_line())
 
     assert repository.cart_edit_item_repo(CUSTOMER_ID, 1, 0)["items"] == []
 
 
 def test_repo_returns_none_for_an_item_not_in_the_cart(repository):
-    repository.cart_add_customer(CUSTOMER_ID)
+    repository.cart_repo_get_create_cart(CUSTOMER_ID)
     assert repository.cart_edit_item_repo(CUSTOMER_ID, 999, 2) is None
 
 
 def test_repo_empty_clears_items_but_keeps_the_cart(repository):
-    repository.cart_add_customer(CUSTOMER_ID)
+    repository.cart_repo_get_create_cart(CUSTOMER_ID)
     repository.cart_add_item_to_cart_repo(CUSTOMER_ID, a_cart_line(quantity=2))
 
     assert repository.cart_empty_items_repo(CUSTOMER_ID)["items"] == []
@@ -198,16 +198,16 @@ def test_repo_empty_clears_items_but_keeps_the_cart(repository):
 
 
 def test_repo_close_hides_the_cart_and_allows_a_new_one(repository):
-    repository.cart_add_customer(CUSTOMER_ID)
+    repository.cart_repo_get_create_cart(CUSTOMER_ID)
 
     closed = repository.cart_close_repo(CUSTOMER_ID)
     assert closed["checkout_status"] is True
     assert repository.cart_view_by_customer_repo(CUSTOMER_ID) is None
-    assert repository.cart_add_customer(CUSTOMER_ID) is True
+    assert repository.cart_repo_get_create_cart(CUSTOMER_ID) is True
 
 
 def test_repo_writes_survive_a_new_repository_instance(repository):
-    repository.cart_add_customer(CUSTOMER_ID)
+    repository.cart_repo_get_create_cart(CUSTOMER_ID)
     repository.cart_add_item_to_cart_repo(CUSTOMER_ID, a_cart_line())
 
     fresh = ShoppingCartRepository()
@@ -216,8 +216,8 @@ def test_repo_writes_survive_a_new_repository_instance(repository):
 
 
 def test_repo_one_customers_cart_does_not_disturb_another(repository):
-    repository.cart_add_customer(CUSTOMER_ID)
-    repository.cart_add_customer(CUSTOMER_ID + 1)
+    repository.cart_repo_get_create_cart(CUSTOMER_ID)
+    repository.cart_repo_get_create_cart(CUSTOMER_ID + 1)
     repository.cart_add_item_to_cart_repo(CUSTOMER_ID, a_cart_line())
 
     assert repository.cart_view_by_customer_repo(CUSTOMER_ID + 1)["items"] == []

@@ -380,21 +380,33 @@ element("account-register").addEventListener("submit", function (event) {
     });
 });
 
+async function signIn(credentials) {
+    const result = await api("/auth/login", "POST", credentials);
+    sessionToken = result.access_token;
+    displayAccount(result.account);
+    element("account-login").reset();
+    if (account.role === "restaurant") {
+        newRestaurant();
+        showView("manage-view");
+    } else {
+        showView("browse-view");
+    }
+    await loadRestaurants();
+}
+
 element("account-login").addEventListener("submit", function (event) {
     event.preventDefault();
-    run(async function () {
-        const result = await api("/auth/login", "POST", Object.fromEntries(new FormData(event.target)));
-        sessionToken = result.access_token;
-        displayAccount(result.account);
-        event.target.reset();
-        if (account.role === "restaurant") {
-            newRestaurant();
-            showView("manage-view");
-        } else {
-            showView("browse-view");
-        }
-        await loadRestaurants();
-    });
+    const credentials = Object.fromEntries(new FormData(event.target));
+    run(function () { return signIn(credentials); });
+});
+
+bindClick("demo-sign-in", async function () {
+    const credentials = {
+        email: "demo-" + crypto.randomUUID() + "@example.com",
+        password: crypto.randomUUID(),
+    };
+    await api("/customers", "POST", { name: "Demo Customer", ...credentials });
+    await signIn(credentials);
 });
 
 element("profile-form").addEventListener("submit", function (event) {
