@@ -36,5 +36,11 @@ def administrator(account: AccountRead = Depends(current_account)) -> AccountRea
     require_role(account, "admin")
     return account
 
+def reject_customer_edit(
+    account: AccountRead = Depends(current_account),
+) -> None:
+    if account.role == "customer":
+        raise Forbidden("Customers cannot edit restaurant or menu information.")
+
 
 

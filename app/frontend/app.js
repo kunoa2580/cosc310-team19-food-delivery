@@ -1,6 +1,5 @@
 // Restaurant paths are plural; the registered menu router uses singular /restaurant.
 // Every write goes to FastAPI, which saves data through services and repositories.
-let role = null;
 let restaurants = [];
 let selectedRestaurant = null;
 let menuItems = [];
@@ -23,11 +22,14 @@ function showNotice(message, isError = false) {
 }
 
 function showView(id) {
+    const isCustomer = account?.role === "customer";
     document.querySelectorAll(".view").forEach(function (view) {
         view.hidden = view.id !== id;
     });
-    element("logout").hidden = role === null;
-    element("role-label").textContent = role === null ? "" : role === "customer" ? "Customer view" : "Restaurant view";
+    element("guest-sign-in").hidden = !!account || id === "login-view";
+    element("open-cart").hidden = !isCustomer || id === "cart-view";
+    element("open-account").hidden = !isCustomer || id === "account-view";
+    element("sign-out").hidden = !account;
 }
 
 // Handles FastAPI string errors, Pydantic's error list, and empty DELETE responses.
@@ -54,7 +56,9 @@ async function api(path, method = "GET", body = null) {
                 return error.loc.join(".") + ": " + error.msg;
             }).join("\n");
         }
-        throw new Error(typeof detail === "string" ? detail : "Request failed (HTTP " + response.status + ").");
+        const failure = new Error(typeof detail === "string" ? detail : "Request failed (HTTP " + response.status + ").");
+        failure.status = response.status;
+        throw failure;
     }
     return data;
 }
@@ -70,6 +74,7 @@ async function run(action) {
     try {
         await action();
     } catch (error) {
+        if (error.status === 401 && sessionToken) clearAccount();
         showNotice(error.message === "Failed to fetch" ? "Cannot reach the backend. Make sure Uvicorn is running." : error.message, true);
     } finally {
         busy = false;
@@ -175,7 +180,7 @@ function renderMenu(containerId, items, management) {
                 actionButton("Delete", function () { return deleteMenuItem(item); }, "danger"));
             card.appendChild(actions);
         }
-         else if (account && account.role === "customer" && item.availability) {
+        else if (account?.role === "customer" && item.availability) {
             card.appendChild(actionButton("Add to cart", function () { return addToCart(item); }));
         }
         container.appendChild(card);
@@ -318,27 +323,21 @@ async function deleteMenuItem(item) {
     showNotice("Menu item deleted.");
 }
 
-async function enterRole(selectedRole) {
+async function browseRestaurants() {
     await loadRestaurants();
-    role = selectedRole;
-    if (role === "restaurant") { newRestaurant(); showView("manage-view"); }
-    else showView("browse-view");
+    showView("browse-view");
 }
 
 function bindClick(id, action) {
     element(id).addEventListener("click", function () { run(action); });
 }
 
-bindClick("customer-login", function () { return enterRole("customer"); });
-bindClick("restaurant-login", function () { return enterRole("restaurant"); });
-bindClick("logout", function () {
-    role = null;
-    selectedRestaurant = null;
-    editingMenuItem = null;
-    showView("login-view");
-});
+bindClick("browse-guest", browseRestaurants);
+bindClick("guest-sign-in", function () { showView("login-view"); });
+bindClick("open-account", function () { showView("account-view"); });
+bindClick("back-from-account", browseRestaurants);
 bindClick("refresh-restaurants", loadRestaurants);
-bindClick("back-to-restaurants", async function () { await loadRestaurants(); showView("browse-view"); });
+bindClick("back-to-restaurants", browseRestaurants);
 bindClick("new-restaurant", newRestaurant);
 bindClick("delete-restaurant", deleteRestaurant);
 bindClick("refresh-manager", async function () {
@@ -350,7 +349,7 @@ bindClick("refresh-manager", async function () {
 bindClick("new-menu-item", function () { resetMenuForm(); element("menu-form").scrollIntoView({ behavior: "smooth" }); });
 bindClick("cancel-menu-edit", resetMenuForm);
 bindClick("open-cart", async function () { await loadCart(); showView("cart-view"); });
-bindClick("back-from-cart", async function () { await loadRestaurants(); showView("browse-view"); });
+bindClick("back-from-cart", browseRestaurants);
 bindClick("clear-cart", clearCart);
 bindClick("checkout", checkout);
 element("search").addEventListener("input", renderRestaurants);
@@ -361,31 +360,22 @@ element("managed-restaurant").addEventListener("change", function () {
 });
 element("restaurant-form").addEventListener("submit", function (event) { event.preventDefault(); run(saveRestaurant); });
 element("menu-form").addEventListener("submit", function (event) { event.preventDefault(); run(saveMenuItem); });
-showView("login-view");
 
 function displayAccount(value) {
     account = value;
-    element("account-login").hidden = !!account;
-        element("open-cart").hidden = !(account && account.role === "customer");
-    element("registration-panel").hidden = !!account;
-    element("signed-in").hidden = !account;
-    element("restaurant-login").hidden = false;
-    const isCustomer = account && account.role === "customer";
-    element("profile-form").hidden = !isCustomer;
-    element("address-form").hidden = !isCustomer;
-    element("deactivate-account").hidden = !isCustomer;
-    if (account) {
-        element("account-summary").textContent = account.name + " (" + account.role + ") — " + account.email;
-        element("profile-form").elements.name.value = account.name;
-        element("address-form").elements.delivery_address.value = account.delivery_address || "";
-    }
+    element("account-summary").textContent = account ? account.name + " — " + account.email : "";
+    element("profile-form").elements.name.value = account?.name || "";
+    element("address-form").elements.delivery_address.value = account?.delivery_address || "";
 }
 
 element("account-register").addEventListener("submit", function (event) {
     event.preventDefault();
     run(async function () {
-        await api("/customers", "POST", Object.fromEntries(new FormData(event.target)));
+        const registration = Object.fromEntries(new FormData(event.target));
+        await api("/customers", "POST", registration);
         event.target.reset();
+        element("registration-panel").open = false;
+        element("account-login").elements.email.value = registration.email;
         showNotice("Account created. Sign in above.");
     });
 });
@@ -397,7 +387,13 @@ element("account-login").addEventListener("submit", function (event) {
         sessionToken = result.access_token;
         displayAccount(result.account);
         event.target.reset();
-        await enterRole(account.role === "restaurant" ? "restaurant" : "customer");
+        if (account.role === "restaurant") {
+            newRestaurant();
+            showView("manage-view");
+        } else {
+            showView("browse-view");
+        }
+        await loadRestaurants();
     });
 });
 
@@ -416,32 +412,37 @@ element("address-form").addEventListener("submit", function (event) {
     });
 });
 
-async function clearAccount() {
+function clearAccount() {
     displayAccount(null);
     sessionToken = "";
-    role = null;
-        cart = null;
+    selectedRestaurant = null;
+    editingMenuItem = null;
+    viewedRestaurantId = null;
+    cart = null;
+    renderCart();
+    renderOrder(null);
     showView("login-view");
 }
 bindClick("sign-out", async function () {
     await api("/auth/logout", "POST");
-    await clearAccount();
+    clearAccount();
 });
 bindClick("deactivate-account", async function () {
     if (!window.confirm("Deactivate your account? You will no longer be able to sign in.")) return;
     await api("/customers/me", "DELETE");
-    await clearAccount();
+    clearAccount();
     showNotice("Account deactivated.");
 });
 // Keep the token in memory: reloading the page requires signing in again.
-displayAccount(null);
+showView("login-view");
 
 
 async function loadCart() {
     try {
         cart = await api("/cart/view/");
     } catch (error) {
-        cart = null;                 // 404 just means no active cart yet
+        if (error.status !== 404) throw error;
+        cart = null;
     }
     renderCart();
 }
@@ -450,9 +451,12 @@ function renderCart() {
     const container = element("cart-list");
     container.replaceChildren();
     const lines = cart ? cart.items : [];
+    element("cart-actions").hidden = lines.length === 0;
+    element("cart-total").textContent = cart
+        ? "Subtotal $" + cart.subtotal.toFixed(2) + " · Total $" + cart.total.toFixed(2) + " CAD"
+        : "";
     if (lines.length === 0) {
         emptyMessage(container, "Your cart is empty.");
-        element("cart-total").textContent = "";
         return;
     }
     lines.forEach(function (line) {
@@ -471,13 +475,30 @@ function renderCart() {
         card.appendChild(actions);
         container.appendChild(card);
     });
-    element("cart-total").textContent =
-        "Subtotal $" + cart.subtotal.toFixed(2) + " · Total $" + cart.total.toFixed(2) + " CAD";
+}
+
+function renderOrder(order) {
+    const confirmation = element("order-confirmation");
+    confirmation.replaceChildren();
+    confirmation.hidden = !order;
+    if (!order) return;
+
+    const items = document.createElement("ul");
+    order.items.forEach(function (item) {
+        items.appendChild(textNode("li", item.quantity + " × " + item.name +
+            " at $" + item.unit_price.toFixed(2) + " each"));
+    });
+    confirmation.append(
+        textNode("h2", "Order #" + order.order_id + " placed"),
+        items,
+        textNode("p", "Final total $" + order.total.toFixed(2) + " CAD", "price")
+    );
 }
 
 async function addToCart(item) {
     const restaurantId = item.restaurant_id || viewedRestaurantId;
     cart = await api("/cart/add/" + restaurantId + "/" + item.item_id + "/1", "POST");
+    renderOrder(null);
     showNotice(item.name + " added to your cart.");
 }
 
@@ -502,8 +523,9 @@ async function clearCart() {
 
 async function checkout() {
     if (!cart || cart.items.length === 0) throw new Error("Your cart is empty.");
-    await api("/customers/" + account.id + "/checkout", "POST");
+    const order = await api("/customers/" + account.id + "/checkout", "POST");
     cart = null;
     renderCart();
-    showNotice("Order placed.");
+    renderOrder(order);
+    await loadCart();
 }

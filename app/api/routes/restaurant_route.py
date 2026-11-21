@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
+from app.api.auth import reject_customer_edit
 from app.services.restaurant_service import (
     restaurant_service_create,
     restaurant_service_list,
@@ -27,7 +28,12 @@ def restaurant_route_get_list() -> list[RestaurantRead]:
 @router.post( 
         "", 
         response_model=RestaurantRead,
-        status_code=status.HTTP_201_CREATED)
+        status_code=status.HTTP_201_CREATED,
+        dependencies=[Depends(reject_customer_edit)],
+        responses={
+            401: {"description": "Sign-in required"},
+            403: {"description": "Customers cannot edit restaurant or menu information"},
+        })
 def restaurant_route_create(new_restaurant: RestaurantCreate) -> RestaurantRead:
     try:
         return restaurant_service_create(new_restaurant)
@@ -40,9 +46,15 @@ def restaurant_route_create(new_restaurant: RestaurantCreate) -> RestaurantRead:
 
 
 @router.patch(
-        "/{restaurant_id}",
-        response_model=RestaurantRead,
-        status_code=status.HTTP_200_OK)
+    "/{restaurant_id}",
+    response_model=RestaurantRead,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(reject_customer_edit)],
+    responses={
+        401: {"description": "Sign-in required"},
+        403: {"description": "Customers cannot edit restaurant or menu information"},
+    }
+)
 def restaurant_route_update(restaurant_id: int, updates: RestaurantUpdate) -> RestaurantRead:
     try:
         return restaurant_service_update(restaurant_id, updates)
@@ -98,7 +110,12 @@ def restaurant_route_get_by_id(restaurant_id: int) -> RestaurantRead:
 
 @router.delete(
         "/{restaurant_id}",
-        status_code = status.HTTP_204_NO_CONTENT
+        status_code = status.HTTP_204_NO_CONTENT,
+        dependencies=[Depends(reject_customer_edit)],
+        responses={
+            401: {"description": "Sign-in required"},
+            403: {"description": "Customers cannot edit restaurant or menu information"},
+        }
         )
 def restaurant_route_delete(restaurant_id: int) -> None:
     try:

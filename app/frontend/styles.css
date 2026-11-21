@@ -14,12 +14,14 @@ p { margin: 0 0 14px; }
 .eyebrow { color: #39764a; letter-spacing: 2px; font-size: 12px; font-weight: 700; }
 .muted, .demo-note { color: #65736c; }
 .demo-note { font-size: 13px; margin-top: 24px; }
-.login { max-width: 800px; margin: 60px auto; }
-.role-grid, .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.login { max-width: 520px; margin: 60px auto; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .panel, .card { background: white; border: 1px solid #dde5dc; border-radius: 10px; padding: 24px; }
 .panel { margin: 20px 0; }
-.role-grid .panel { margin: 10px 0 0; }
-.role-grid button { width: 100%; margin-top: 10px; }
+.account-form { display: grid; gap: 12px; max-width: 420px; margin: 0 0 20px; }
+.account-form button { justify-self: start; }
+#registration-panel summary { cursor: pointer; }
+#registration-panel form { margin: 12px 0 0; }
 button { font: inherit; font-weight: 600; cursor: pointer; border: 1px solid #296342; border-radius: 6px; background: #296342; color: white; padding: 10px 16px; }
 button:hover { background: #204e34; }
 button.secondary { background: white; color: #296342; border-color: #c7d5c9; }
@@ -55,4 +57,14 @@ a { color: #296342; }
 .empty { color: #65736c; padding: 20px 0; grid-column: 1 / -1; }
 footer { padding: 24px; text-align: center; font-size: 12px; color: #65736c; }
 @media (max-width: 850px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 560px) { main { margin-top: 24px; padding: 0 16px; } .login { margin-top: 30px; } .role-grid, .form-grid, .cards { grid-template-columns: 1fr; } .toolbar > * { width: 100%; } .details dl { grid-template-columns: 1fr; gap: 4px; } .details dd { margin-bottom: 10px; } .topbar { padding: 16px; } #role-label { display: none; } .section-heading { align-items: flex-start; } }
+@media (max-width: 560px) {
+    main { margin-top: 24px; padding: 0 16px; }
+    .login { margin-top: 30px; }
+    .form-grid, .cards { grid-template-columns: 1fr; }
+    .toolbar > * { width: 100%; }
+    .details dl { grid-template-columns: 1fr; }
+    .details dd { margin-bottom: 10px; }
+    .topbar { padding: 16px; flex-wrap: wrap; }
+    .header-actions { flex-wrap: wrap; }
+    .section-heading { align-items: flex-start; }
+}
