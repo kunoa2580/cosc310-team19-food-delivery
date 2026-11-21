@@ -19,8 +19,11 @@ class JsonStore:
         path = self.path()
         if not path.exists():
             return []
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
+        text = path.read_text(encoding="utf-8")
+        if not text.strip():
+            # Regression fix: an empty file means no records yet (it used to crash with a 500).
+            return []
+        return json.loads(text)
 
     def save(self, records: list[dict]) -> None:
         path = self.path()
