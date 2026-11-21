@@ -64,3 +64,13 @@ def test_order_repo_list_by_customer():
 def test_order_repo_list_by_customer_none():
     repo = OrderRepository()
     assert repo.order_repo_list_by_customer(999) == []
+
+
+
+# Regression: an empty orders.json used to make order history and checkout return 500.
+def test_order_repo_works_when_orders_file_is_empty(tmp_path):
+    path = tmp_path / "orders.json"
+    path.write_text("", encoding="utf-8")
+    repo = OrderRepository(data_path=str(path))
+    assert repo.order_repo_list_by_customer(1) == []
+    assert repo.order_repo_create(sample)["order_id"] == 1
