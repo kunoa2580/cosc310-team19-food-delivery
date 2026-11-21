@@ -380,12 +380,25 @@ element("account-register").addEventListener("submit", function (event) {
     });
 });
 
-async function signIn(credentials) {
+function showDemoAdminForm(open) {
+    const form = element("demo-admin-login");
+    element("demo-admin-sign-in").setAttribute("aria-expanded", String(open));
+    form.hidden = !open;
+    if (open) form.elements.password.focus();
+    else form.reset();
+}
+
+async function signIn(credentials, requiredRole = null) {
     const result = await api("/auth/login", "POST", credentials);
+    if (requiredRole && result.account.role !== requiredRole) {
+        throw new Error("This account does not have admin access.");
+    }
+
     sessionToken = result.access_token;
     displayAccount(result.account);
     element("account-login").reset();
-    if (account.role === "restaurant") {
+    showDemoAdminForm(false);
+    if (account.role === "restaurant" || account.role === "admin") {
         newRestaurant();
         showView("manage-view");
     } else {
@@ -407,6 +420,16 @@ bindClick("demo-sign-in", async function () {
     };
     await api("/customers", "POST", { name: "Demo Customer", ...credentials });
     await signIn(credentials);
+});
+
+element("demo-admin-sign-in").addEventListener("click", function () {
+    showDemoAdminForm(element("demo-admin-login").hidden);
+});
+
+element("demo-admin-login").addEventListener("submit", function (event) {
+    event.preventDefault();
+    const credentials = Object.fromEntries(new FormData(event.target));
+    run(function () { return signIn(credentials, "admin"); });
 });
 
 element("profile-form").addEventListener("submit", function (event) {

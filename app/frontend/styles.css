@@ -20,7 +20,7 @@ p { margin: 0 0 14px; }
 .panel { margin: 20px 0; }
 .account-form { display: grid; gap: 12px; max-width: 420px; margin: 0 0 20px; }
 .account-form button { justify-self: start; }
-#demo-sign-in { margin-bottom: 20px; }
+.demo-actions { display: grid; gap: 8px; justify-items: start; margin-bottom: 20px; }
 #registration-panel summary { cursor: pointer; }
 #registration-panel form { margin: 12px 0 0; }
 button { font: inherit; font-weight: 600; cursor: pointer; border: 1px solid #296342; border-radius: 6px; background: #296342; color: white; padding: 10px 16px; }
